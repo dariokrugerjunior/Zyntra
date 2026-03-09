@@ -17,6 +17,16 @@ const sendMediaSchema = z.object({
   caption: z.string().max(1024).optional()
 });
 
+const listMessagesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(200).default(50),
+  with: z.string().min(3).max(40).optional()
+});
+
+const listConversationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(20000).optional(),
+  search: z.string().min(2).max(40).optional()
+});
+
 async function enforceRateLimit(companyId: string, sessionId: string) {
   const second = Math.floor(Date.now() / 1000);
   const companyKey = `rl:company:${companyId}:${second}`;
@@ -117,4 +127,113 @@ export async function enqueueMediaMessage(
   );
 
   return { jobId: job.id, status: "queued" };
+}
+
+export async function listSessionMessages(companyId: string, sessionId: string, query: unknown) {
+  const data = listMessagesQuerySchema.parse(query);
+  const session = await prisma.waSession.findFirst({
+    where: { id: sessionId, companyId },
+    select: { id: true }
+  });
+  if (!session) {
+    throw new HttpError(404, "session_not_found");
+  }
+
+  const contact = data.with?.trim();
+
+  const messages = await prisma.message.findMany({
+    where: {
+      companyId,
+      sessionId,
+      ...(contact
+        ? {
+            OR: [
+              { to: { contains: contact } },
+              { from: { contains: contact } }
+            ]
+          }
+        : {})
+    },
+    orderBy: { createdAt: "desc" },
+    take: data.limit
+  });
+
+  return messages;
+}
+
+function messagePreview(payload: Record<string, unknown>) {
+  const text = String(payload.text ?? "").trim();
+  if (text) return text;
+  const caption = String(payload.caption ?? "").trim();
+  if (caption) return caption;
+  const fileName = String(payload.fileName ?? "").trim();
+  if (fileName) return `[midia] ${fileName}`;
+  return "[sem texto]";
+}
+
+function messageContact(message: { direction: "in" | "out"; to: string | null; from: string | null }) {
+  return message.direction === "out" ? message.to : message.from;
+}
+
+export async function listSessionConversations(companyId: string, sessionId: string, query: unknown) {
+  const data = listConversationsQuerySchema.parse(query);
+
+  const session = await prisma.waSession.findFirst({
+    where: { id: sessionId, companyId },
+    select: { id: true }
+  });
+  if (!session) {
+    throw new HttpError(404, "session_not_found");
+  }
+
+  const rows = await prisma.message.findMany({
+    where: { companyId, sessionId },
+    orderBy: { createdAt: "desc" }
+  });
+
+  const conversations = new Map<
+    string,
+    {
+      id: string;
+      contact: string;
+      lastMessageAt: string;
+      lastDirection: "in" | "out";
+      lastPreview: string;
+      totalMessages: number;
+    }
+  >();
+
+  for (const row of rows) {
+    const contact = messageContact({
+      direction: row.direction as "in" | "out",
+      to: row.to,
+      from: row.from
+    });
+    if (!contact) continue;
+
+    if (data.search && !contact.includes(data.search.trim())) {
+      continue;
+    }
+
+    const existing = conversations.get(contact);
+    if (!existing) {
+      conversations.set(contact, {
+        id: contact,
+        contact,
+        lastMessageAt: row.createdAt.toISOString(),
+        lastDirection: row.direction as "in" | "out",
+        lastPreview: messagePreview((row.payload ?? {}) as Record<string, unknown>),
+        totalMessages: 1
+      });
+      continue;
+    }
+
+    existing.totalMessages += 1;
+  }
+
+  const all = Array.from(conversations.values()).sort(
+    (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+  );
+
+  return data.limit ? all.slice(0, data.limit) : all;
 }

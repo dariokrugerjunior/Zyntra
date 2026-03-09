@@ -56,6 +56,25 @@ export interface MessageSent {
   error?: string;
 }
 
+export interface SessionMessage {
+  id: string;
+  direction: 'in' | 'out';
+  to?: string | null;
+  from?: string | null;
+  waMessageId?: string | null;
+  payload: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface SessionConversation {
+  id: string;
+  contact: string;
+  lastMessageAt: string;
+  lastDirection: 'in' | 'out';
+  lastPreview: string;
+  totalMessages: number;
+}
+
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'info';

@@ -7,3 +7,7 @@ export async function getSessionStoragePath(companyId: string, sessionId: string
   await fs.mkdir(sessionPath, { recursive: true });
   return sessionPath;
 }
+
+export function getSessionStoragePathUnsafe(companyId: string, sessionId: string) {
+  return path.join(env.BAILEYS_STORAGE_PATH, "companies", companyId, "sessions", sessionId);
+}

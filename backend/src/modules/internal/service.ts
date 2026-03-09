@@ -1,4 +1,4 @@
-﻿import { Prisma } from "@prisma/client";
+import { MessageDirection, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../../infra/db/prisma";
 import { enqueueWebhookDeliveries } from "../webhooks/service";
@@ -9,6 +9,7 @@ const workerEventSchema = z.object({
     "session.qr",
     "session.ready",
     "session.disconnected",
+    "history.sync",
     "message.received",
     "message.sent",
     "message.error"
@@ -98,6 +99,52 @@ export async function ingestWorkerEvent(input: unknown) {
     });
   }
 
+  if (event.eventType === "history.sync") {
+    const rawMessages = Array.isArray(event.payload.messages) ? event.payload.messages : [];
+
+    const incoming = rawMessages
+      .map((item) => {
+        const message = item as Record<string, unknown>;
+        const waMessageId = typeof message.waMessageId === "string" ? message.waMessageId : null;
+        const direction: MessageDirection = message.direction === "out" ? "out" : "in";
+        if (!waMessageId) return null;
+
+        return {
+          companyId: event.companyId,
+          sessionId: event.sessionId,
+          direction,
+          waMessageId,
+          to: typeof message.to === "string" ? message.to : null,
+          from: typeof message.from === "string" ? message.from : null,
+          payload: (typeof message.payload === "object" && message.payload
+            ? (message.payload as Prisma.InputJsonValue)
+            : ({} as Prisma.InputJsonValue)),
+          createdAt: typeof message.createdAt === "string" ? new Date(message.createdAt) : new Date()
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+    if (incoming.length > 0) {
+      const messageIds = incoming.map((item) => item.waMessageId);
+      const existing = await prisma.message.findMany({
+        where: {
+          companyId: event.companyId,
+          sessionId: event.sessionId,
+          waMessageId: { in: messageIds }
+        },
+        select: { waMessageId: true }
+      });
+      const existingSet = new Set(existing.map((item) => item.waMessageId).filter(Boolean) as string[]);
+      const toInsert = incoming.filter((item) => !existingSet.has(item.waMessageId));
+
+      if (toInsert.length > 0) {
+        await prisma.message.createMany({
+          data: toInsert
+        });
+      }
+    }
+  }
+
   const envelope = {
     eventType: event.eventType,
     companyId: event.companyId,
@@ -109,3 +156,4 @@ export async function ingestWorkerEvent(input: unknown) {
   await enqueueWebhookDeliveries(event.companyId, event.eventType, event.sessionId, envelope);
   logger.info({ eventType: event.eventType, companyId: event.companyId, sessionId: event.sessionId }, "worker event ingested");
 }
+

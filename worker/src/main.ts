@@ -5,6 +5,7 @@ import { startSessionJob } from "./jobs/startSession.job";
 import { stopSessionJob } from "./jobs/stopSession.job";
 import { sendTextJob } from "./jobs/sendText.job";
 import { sendMediaJob } from "./jobs/sendMedia.job";
+import { purgeSessionJob } from "./jobs/purgeSession.job";
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "unhandled promise rejection");
@@ -33,6 +34,10 @@ async function main() {
     createQueueWorker(QUEUES.sessionStop, async (job) => {
       logger.info({ queue: QUEUES.sessionStop, jobId: job.id }, "processing job");
       await stopSessionJob(job.data);
+    }),
+    createQueueWorker(QUEUES.sessionPurge, async (job) => {
+      logger.info({ queue: QUEUES.sessionPurge, jobId: job.id }, "processing job");
+      await purgeSessionJob(job.data);
     }),
     createQueueWorker(QUEUES.sendText, async (job) => {
       logger.info({ queue: QUEUES.sendText, jobId: job.id }, "processing job");

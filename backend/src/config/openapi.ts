@@ -65,6 +65,7 @@
               "session.qr",
               "session.ready",
               "session.disconnected",
+              "history.sync",
               "message.received",
               "message.sent",
               "message.error"
@@ -169,6 +170,16 @@
           "200": { description: "Detalhes" },
           "404": { description: "Nao encontrada" }
         }
+      },
+      delete: {
+        tags: ["Sessions"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Exclui sessao e dados relacionados",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "204": { description: "Sessao removida" },
+          "404": { description: "Nao encontrada" }
+        }
       }
     },
     "/sessions/{id}/start": {
@@ -215,6 +226,17 @@
         }
       }
     },
+    "/sessions/{id}/sync-history": {
+      post: {
+        tags: ["Sessions"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Reinicia sessao e solicita sincronizacao de historico",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "202": { description: "Sincronizacao enfileirada" }
+        }
+      }
+    },
     "/sessions/{id}/messages/text": {
       post: {
         tags: ["Messages"],
@@ -235,6 +257,36 @@
         responses: {
           "202": { description: "Enfileirada" },
           "409": { description: "Requisicao duplicada ou sessao nao pronta" }
+        }
+      }
+    },
+    "/sessions/{id}/messages": {
+      get: {
+        tags: ["Messages"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Lista historico de mensagens da sessao",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 200 } },
+          { name: "with", in: "query", required: false, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Historico retornado" }
+        }
+      }
+    },
+    "/sessions/{id}/conversations": {
+      get: {
+        tags: ["Messages"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Lista conversas da sessao (agrupado por contato)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } },
+          { name: "limit", in: "query", required: false, schema: { type: "integer", minimum: 1, maximum: 20000 } },
+          { name: "search", in: "query", required: false, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Conversas retornadas" }
         }
       }
     },

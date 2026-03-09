@@ -1,7 +1,8 @@
 import axios from "axios";
 import makeWASocket, { DisconnectReason, fetchLatestBaileysVersion, useMultiFileAuthState } from "@whiskeysockets/baileys";
 import { Boom } from "@hapi/boom";
-import { getSessionStoragePath } from "../infra/storage/session-path";
+import fs from "node:fs/promises";
+import { getSessionStoragePath, getSessionStoragePathUnsafe } from "../infra/storage/session-path";
 import { getSocket, removeSocket, setSocket } from "./session.store";
 import { env } from "../shared/utils/env";
 import { logger } from "../shared/logger/logger";
@@ -11,6 +12,7 @@ type WorkerEvent = {
     | "session.qr"
     | "session.ready"
     | "session.disconnected"
+    | "history.sync"
     | "message.received"
     | "message.sent"
     | "message.error";
@@ -32,6 +34,46 @@ function normalizeJid(to: string) {
   return `${digits}@s.whatsapp.net`;
 }
 
+function normalizeHistoryMessage(message: any, selfJid?: string) {
+  const remoteJid = message?.key?.remoteJid as string | undefined;
+  const fromMe = Boolean(message?.key?.fromMe);
+  const waMessageId = message?.key?.id as string | undefined;
+
+  if (!remoteJid || !waMessageId) {
+    return null;
+  }
+
+  const text =
+    message?.message?.conversation ??
+    message?.message?.extendedTextMessage?.text ??
+    message?.message?.imageMessage?.caption ??
+    message?.message?.videoMessage?.caption ??
+    null;
+
+  const messageType = Object.keys(message?.message ?? {})[0] ?? "unknown";
+  const tsRaw = message?.messageTimestamp;
+  const tsSeconds =
+    typeof tsRaw === "number"
+      ? tsRaw
+      : typeof tsRaw?.toNumber === "function"
+        ? tsRaw.toNumber()
+        : Number(tsRaw ?? 0);
+  const createdAt = tsSeconds > 0 ? new Date(tsSeconds * 1000).toISOString() : new Date().toISOString();
+
+  return {
+    waMessageId,
+    direction: fromMe ? "out" : "in",
+    to: fromMe ? remoteJid : selfJid ?? null,
+    from: fromMe ? selfJid ?? null : remoteJid,
+    createdAt,
+    payload: {
+      messageType,
+      text,
+      raw: JSON.stringify(message).slice(0, 800)
+    }
+  };
+}
+
 export async function startSession(companyId: string, sessionId: string) {
   const existing = getSocket<any>(companyId, sessionId);
   if (existing) return;
@@ -42,7 +84,8 @@ export async function startSession(companyId: string, sessionId: string) {
 
   const socket = makeWASocket({
     auth: state,
-    version
+    version,
+    syncFullHistory: true
   });
 
   socket.ev.on("creds.update", saveCreds);
@@ -102,6 +145,33 @@ export async function startSession(companyId: string, sessionId: string) {
     }
   });
 
+  socket.ev.on("messaging-history.set", async (history) => {
+    try {
+      const normalized = (history.messages ?? [])
+        .map((msg) => normalizeHistoryMessage(msg, socket.user?.id))
+        .filter((msg): msg is NonNullable<typeof msg> => Boolean(msg));
+
+      if (normalized.length === 0) {
+        return;
+      }
+
+      await publishEvent({
+        eventType: "history.sync",
+        companyId,
+        sessionId,
+        payload: {
+          count: normalized.length,
+          isLatest: history.isLatest ?? null,
+          progress: history.progress ?? null,
+          syncType: history.syncType ?? null,
+          messages: normalized
+        }
+      });
+    } catch (error) {
+      logger.error({ companyId, sessionId, err: error }, "failed handling messaging-history.set");
+    }
+  });
+
   socket.ev.on("messages.upsert", async (upsert) => {
     try {
       for (const msg of upsert.messages) {
@@ -140,6 +210,27 @@ export async function stopSession(companyId: string, sessionId: string) {
   logger.info({ companyId, sessionId }, "session stopped");
 }
 
+export async function purgeSession(companyId: string, sessionId: string) {
+  const socket = getSocket<any>(companyId, sessionId);
+  if (socket) {
+    try {
+      socket.ws.close();
+    } catch {
+      // ignore socket close errors during purge
+    }
+    removeSocket(companyId, sessionId);
+  }
+
+  const authPath = getSessionStoragePathUnsafe(companyId, sessionId);
+  try {
+    await fs.rm(authPath, { recursive: true, force: true });
+  } catch (error) {
+    logger.warn({ companyId, sessionId, err: error }, "failed removing session storage path during purge");
+  }
+
+  logger.info({ companyId, sessionId }, "session purged");
+}
+
 export async function sendText(companyId: string, sessionId: string, to: string, text: string) {
   const socket = getSocket<any>(companyId, sessionId);
   if (!socket) {
@@ -155,6 +246,8 @@ export async function sendText(companyId: string, sessionId: string, to: string,
     sessionId,
     payload: {
       to,
+      text,
+      messageType: "text",
       waMessageId: result?.key?.id,
       raw: JSON.stringify(result).slice(0, 500)
     }
@@ -191,6 +284,10 @@ export async function sendMedia(
     sessionId,
     payload: {
       to,
+      caption: caption ?? null,
+      fileName: fileName ?? "file",
+      mime,
+      messageType: "media",
       waMessageId: result?.key?.id,
       raw: JSON.stringify(result).slice(0, 500)
     }

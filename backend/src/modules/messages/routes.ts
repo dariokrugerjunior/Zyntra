@@ -1,8 +1,20 @@
 import { Router } from "express";
 import { z } from "zod";
-import { enqueueMediaMessage, enqueueTextMessage } from "./service";
+import { enqueueMediaMessage, enqueueTextMessage, listSessionConversations, listSessionMessages } from "./service";
 
 export const messagesRouter = Router();
+
+messagesRouter.get("/sessions/:id/messages", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const items = await listSessionMessages(req.context!.companyId, id, req.query);
+  return res.json(items);
+});
+
+messagesRouter.get("/sessions/:id/conversations", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const items = await listSessionConversations(req.context!.companyId, id, req.query);
+  return res.json(items);
+});
 
 messagesRouter.post("/sessions/:id/messages/text", async (req, res) => {
   const id = z.string().uuid().parse(req.params.id);

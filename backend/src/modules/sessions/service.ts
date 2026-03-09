@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../../infra/db/prisma";
-import { sessionStartQueue, sessionStopQueue } from "../../infra/queue/bullmq";
+import { sessionPurgeQueue, sessionStartQueue, sessionStopQueue } from "../../infra/queue/bullmq";
 import { redis } from "../../infra/redis/redis";
 import { HttpError } from "../../shared/errors/http-error";
 
@@ -80,4 +80,49 @@ export async function stopSession(companyId: string, sessionId: string) {
   );
 
   return { jobId: job.id, status: "stopped" };
+}
+
+export async function syncSessionHistory(companyId: string, sessionId: string) {
+  await getSessionById(companyId, sessionId);
+  await acquireSessionLock(companyId, sessionId, "stop");
+  await acquireSessionLock(companyId, sessionId, "start");
+
+  await prisma.waSession.update({
+    where: { id: sessionId },
+    data: { status: "starting" }
+  });
+
+  const stopJob = await sessionStopQueue.add(
+    `sync-stop-${companyId}-${sessionId}-${Date.now()}`,
+    { companyId, sessionId },
+    { removeOnComplete: true, removeOnFail: false }
+  );
+
+  const startJob = await sessionStartQueue.add(
+    `sync-start-${companyId}-${sessionId}-${Date.now()}`,
+    { companyId, sessionId },
+    { delay: 2500, removeOnComplete: true, removeOnFail: false }
+  );
+
+  return {
+    status: "syncing",
+    stopJobId: stopJob.id,
+    startJobId: startJob.id
+  };
+}
+
+export async function deleteSession(companyId: string, sessionId: string) {
+  await getSessionById(companyId, sessionId);
+
+  await sessionPurgeQueue.add(
+    `purge-${companyId}-${sessionId}-${Date.now()}`,
+    { companyId, sessionId },
+    { removeOnComplete: true, removeOnFail: false }
+  );
+
+  await prisma.waSession.delete({
+    where: { id: sessionId }
+  });
+
+  await redis.del(`lock:session:${companyId}:${sessionId}:start`, `lock:session:${companyId}:${sessionId}:stop`);
 }

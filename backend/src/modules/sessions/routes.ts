@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createSession, getSessionById, listSessions, startSession, stopSession } from "./service";
+import { createSession, deleteSession, getSessionById, listSessions, startSession, stopSession, syncSessionHistory } from "./service";
 
 export const sessionsRouter = Router();
 
@@ -30,6 +30,18 @@ sessionsRouter.post("/sessions/:id/stop", async (req, res) => {
   const id = z.string().uuid().parse(req.params.id);
   const result = await stopSession(req.context!.companyId, id);
   return res.status(202).json(result);
+});
+
+sessionsRouter.post("/sessions/:id/sync-history", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const result = await syncSessionHistory(req.context!.companyId, id);
+  return res.status(202).json(result);
+});
+
+sessionsRouter.delete("/sessions/:id", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  await deleteSession(req.context!.companyId, id);
+  return res.status(204).send();
 });
 
 sessionsRouter.get("/sessions/:id/qr", async (req, res) => {
