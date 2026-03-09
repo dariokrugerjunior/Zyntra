@@ -41,8 +41,7 @@ export const Layout: React.FC = () => {
   };
 
   return (
-    <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-gray-900 text-white">
         <aside
           className={`
             fixed left-0 top-0 h-full bg-gray-800 border-r border-gray-700 transition-all duration-300 z-40
@@ -153,7 +152,6 @@ export const Layout: React.FC = () => {
             <Outlet />
           </main>
         </div>
-      </div>
     </div>
   );
 };

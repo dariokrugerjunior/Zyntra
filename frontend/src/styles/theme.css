@@ -179,3 +179,49 @@
     line-height: 1.5;
   }
 }
+
+@layer utilities {
+  .theme-light .bg-gray-900 {
+    background-color: #f3f6fb !important;
+  }
+
+  .theme-light .bg-gray-800 {
+    background-color: #ffffff !important;
+  }
+
+  .theme-light .bg-gray-700 {
+    background-color: #eef2f7 !important;
+  }
+
+  .theme-light .bg-gray-600 {
+    background-color: #dbe3ef !important;
+  }
+
+  .theme-light .border-gray-700,
+  .theme-light .border-gray-600 {
+    border-color: #d9e1ee !important;
+  }
+
+  .theme-light .text-white {
+    color: #0f172a !important;
+  }
+
+  .theme-light .text-gray-200,
+  .theme-light .text-gray-300 {
+    color: #334155 !important;
+  }
+
+  .theme-light .text-gray-400,
+  .theme-light .text-gray-500 {
+    color: #64748b !important;
+  }
+
+  .theme-light .hover\:bg-gray-700:hover,
+  .theme-light .hover\:bg-gray-600:hover {
+    background-color: #e2e8f0 !important;
+  }
+
+  .theme-light .hover\:text-white:hover {
+    color: #0f172a !important;
+  }
+}
