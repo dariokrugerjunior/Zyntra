@@ -10,7 +10,7 @@ function getBearerToken(authHeader?: string) {
 }
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  if (req.path === "/health") {
+  if (req.path === "/health" || req.path === "/auth/login") {
     return next();
   }
 

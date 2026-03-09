@@ -23,7 +23,7 @@ docker compose up -d --build
   - fallback para `.env` se os arquivos acima não existirem
 
 ## Seed (company + api key)
-O seed cria/atualiza 1 company (`Demo Company`) e 1 API key de login fixa (`SEED_API_KEY` no `.env`):
+O seed cria/atualiza 1 company (`Demo Company`) e 1 API key de login fixa (`SEED_API_KEY` no `.env.local`/`.env`), no padrão `zyn_...`:
 ```bash
 docker compose exec backend npm run seed
 ```

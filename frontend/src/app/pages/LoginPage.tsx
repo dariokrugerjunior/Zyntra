@@ -31,12 +31,10 @@ export const LoginPage: React.FC = () => {
       const validated = loginSchema.parse({ mode, credential });
       setLoading(true);
 
-      const tempHeader =
-        validated.mode === 'api-key'
-          ? { 'X-API-Key': validated.credential }
-          : { Authorization: `Bearer ${validated.credential}` };
-
-      await apiClient.get('/sessions', { headers: tempHeader });
+      await apiClient.post('/auth/login', {
+        mode: validated.mode,
+        credential: validated.credential,
+      });
 
       login(validated.mode, validated.credential);
       addToast('success', 'Successfully authenticated');

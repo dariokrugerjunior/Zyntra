@@ -3,18 +3,29 @@ import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
 
-const envCandidates = [
+const envFileCandidates = [
   process.env.ENV_FILE,
   process.env.NODE_ENV === "production" ? ".env.production" : ".env.local",
   ".env"
 ].filter((value): value is string => Boolean(value));
 
-for (const envFile of envCandidates) {
-  const envPath = resolve(process.cwd(), envFile);
-  if (existsSync(envPath)) {
-    config({ path: envPath });
-    break;
+const envDirCandidates = [
+  process.cwd(),
+  resolve(__dirname, "../.."),
+  resolve(__dirname, "../../..")
+];
+
+let loaded = false;
+for (const envDir of envDirCandidates) {
+  for (const envFile of envFileCandidates) {
+    const envPath = resolve(envDir, envFile);
+    if (existsSync(envPath)) {
+      config({ path: envPath });
+      loaded = true;
+      break;
+    }
   }
+  if (loaded) break;
 }
 
 const envSchema = z.object({

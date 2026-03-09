@@ -42,64 +42,88 @@ export async function startSession(companyId: string, sessionId: string) {
 
   const socket = makeWASocket({
     auth: state,
-    version,
-    printQRInTerminal: true
+    version
   });
 
   socket.ev.on("creds.update", saveCreds);
 
   socket.ev.on("connection.update", async (update) => {
-    if (update.qr) {
-      await publishEvent({
-        eventType: "session.qr",
-        companyId,
-        sessionId,
-        payload: { qrString: update.qr }
-      });
-    }
+    try {
+      if (update.qr) {
+        await publishEvent({
+          eventType: "session.qr",
+          companyId,
+          sessionId,
+          payload: { qrString: update.qr }
+        });
+      }
 
-    if (update.connection === "open") {
-      await publishEvent({
-        eventType: "session.ready",
-        companyId,
-        sessionId,
-        payload: { phoneNumber: socket.user?.id ?? null }
-      });
-    }
+      if (update.connection === "open") {
+        await publishEvent({
+          eventType: "session.ready",
+          companyId,
+          sessionId,
+          payload: { phoneNumber: socket.user?.id ?? null }
+        });
+      }
 
-    if (update.connection === "close") {
-      const statusCode = (update.lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
-      const reason = statusCode === DisconnectReason.loggedOut ? "logged_out" : "connection_closed";
+      if (update.connection === "close") {
+        const statusCode = (update.lastDisconnect?.error as Boom | undefined)?.output?.statusCode;
 
-      await publishEvent({
-        eventType: "session.disconnected",
-        companyId,
-        sessionId,
-        payload: { reason }
-      });
+        if (statusCode === DisconnectReason.restartRequired) {
+          removeSocket(companyId, sessionId);
+          logger.info({ companyId, sessionId }, "baileys requested restart, reconnecting session");
+          setTimeout(() => {
+            startSession(companyId, sessionId).catch((error) => {
+              logger.error({ companyId, sessionId, err: error }, "failed to reconnect session after restartRequired");
+            });
+          }, 1200);
+          return;
+        }
 
-      removeSocket(companyId, sessionId);
+        const reason =
+          statusCode === DisconnectReason.loggedOut
+            ? "logged_out"
+            : statusCode === DisconnectReason.connectionReplaced
+              ? "conflict"
+              : "connection_closed";
+
+        await publishEvent({
+          eventType: "session.disconnected",
+          companyId,
+          sessionId,
+          payload: { reason }
+        });
+
+        removeSocket(companyId, sessionId);
+      }
+    } catch (error) {
+      logger.error({ companyId, sessionId, err: error }, "failed handling connection.update");
     }
   });
 
   socket.ev.on("messages.upsert", async (upsert) => {
-    for (const msg of upsert.messages) {
-      if (!msg.key.fromMe) {
-        const text = msg.message?.conversation ?? msg.message?.extendedTextMessage?.text;
-        await publishEvent({
-          eventType: "message.received",
-          companyId,
-          sessionId,
-          payload: {
-            from: msg.key.remoteJid,
-            to: socket.user?.id ?? null,
-            messageType: Object.keys(msg.message ?? {})[0] ?? "unknown",
-            text: text ?? null,
-            waMessageId: msg.key.id,
-            raw: JSON.stringify(msg).slice(0, 800)
-          }
-        });
+    try {
+      for (const msg of upsert.messages) {
+        if (!msg.key.fromMe) {
+          const text = msg.message?.conversation ?? msg.message?.extendedTextMessage?.text;
+          await publishEvent({
+            eventType: "message.received",
+            companyId,
+            sessionId,
+            payload: {
+              from: msg.key.remoteJid,
+              to: socket.user?.id ?? null,
+              messageType: Object.keys(msg.message ?? {})[0] ?? "unknown",
+              text: text ?? null,
+              waMessageId: msg.key.id,
+              raw: JSON.stringify(msg).slice(0, 800)
+            }
+          });
+        }
       }
+    } catch (error) {
+      logger.error({ companyId, sessionId, err: error }, "failed handling messages.upsert");
     }
   });
 

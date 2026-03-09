@@ -1,10 +1,11 @@
+// @ts-ignore
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const seedApiKey = process.env.SEED_API_KEY ?? "zyntra-local-dev-key";
+  const seedApiKey = process.env.SEED_API_KEY ?? "zyn_seed_local_dev_2026";
   const company = await prisma.company.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
     update: {},

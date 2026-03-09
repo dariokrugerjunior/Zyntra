@@ -6,6 +6,14 @@ import { stopSessionJob } from "./jobs/stopSession.job";
 import { sendTextJob } from "./jobs/sendText.job";
 import { sendMediaJob } from "./jobs/sendMedia.job";
 
+process.on("unhandledRejection", (reason) => {
+  logger.error({ err: reason }, "unhandled promise rejection");
+});
+
+process.on("uncaughtException", (error) => {
+  logger.error({ err: error }, "uncaught exception");
+});
+
 async function main() {
   logger.info(
     {
