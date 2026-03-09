@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="zyntraGradient" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#2563EB"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="108" height="108" rx="28" fill="#0F172A"/>
+  <rect x="16" y="16" width="96" height="96" rx="22" fill="url(#zyntraGradient)"/>
+  <path d="M35 40H93V52L55 86H93V98H35V86L73 52H35V40Z" fill="white"/>
+</svg>

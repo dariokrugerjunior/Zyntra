@@ -7,6 +7,7 @@ import { useUiStore } from '../../stores/ui-store';
 import { apiClient } from '../../lib/api-client';
 import { AuthMode } from '../../types';
 import { Loader } from '../components/Loader';
+import zyntraLogo from '../../assets/zyntra-logo.svg';
 
 const loginSchema = z.object({
   mode: z.enum(['api-key', 'jwt']),
@@ -63,6 +64,7 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-gray-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
+          <img src={zyntraLogo} alt="Zyntra logo" className="w-16 h-16 mx-auto mb-4 rounded-2xl" />
           <h1 className="text-3xl font-bold text-white mb-2">Zyntra</h1>
           <p className="text-gray-400">Multi-tenant SaaS Platform</p>
         </div>

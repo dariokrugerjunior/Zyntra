@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router';
 import { useAuthStore } from '../../stores/auth-store';
 import { useUiStore } from '../../stores/ui-store';
+import zyntraLogo from '../../assets/zyntra-logo.svg';
 import {
   LayoutDashboard,
   MessageSquare,
@@ -49,7 +50,13 @@ export const Layout: React.FC = () => {
           `}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            {!sidebarCollapsed && <h1 className="text-lg font-bold text-white">Zyntra</h1>}
+            {!sidebarCollapsed && (
+              <div className="flex items-center gap-3">
+                <img src={zyntraLogo} alt="Zyntra logo" className="w-8 h-8 rounded-lg" />
+                <h1 className="text-lg font-bold text-white">Zyntra</h1>
+              </div>
+            )}
+            {sidebarCollapsed && <img src={zyntraLogo} alt="Zyntra logo" className="w-8 h-8 rounded-lg" />}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1 hover:bg-gray-700 rounded transition-colors"

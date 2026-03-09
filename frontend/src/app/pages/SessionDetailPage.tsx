@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import QRCodeLib from 'qrcode';
-import { ArrowLeft, Play, Square, RefreshCw, MessageSquare, SendHorizontal, Trash2, Bot } from 'lucide-react';
+import { ArrowLeft, Play, Square, MessageSquare, SendHorizontal, Trash2, Bot } from 'lucide-react';
 import { apiClient } from '../../lib/api-client';
 import { mapSessionQr } from '../../lib/api-mappers';
 import { useUiStore } from '../../stores/ui-store';
@@ -40,6 +40,7 @@ export const SessionDetailPage: React.FC = () => {
   });
   const [autoReplyLoading, setAutoReplyLoading] = useState(false);
   const [autoReplySaving, setAutoReplySaving] = useState(false);
+  const [lastStatusCheckAt, setLastStatusCheckAt] = useState<Date | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,7 +52,7 @@ export const SessionDetailPage: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (session && shouldPoll(session.status)) {
+    if (session) {
       startPolling();
     } else {
       stopPolling();
@@ -102,9 +103,10 @@ export const SessionDetailPage: React.FC = () => {
 
   const startPolling = () => {
     stopPolling();
+    const interval = session && shouldPoll(session.status) ? 3000 : 10000;
     pollingIntervalRef.current = setInterval(() => {
       if (id) pollStatus();
-    }, 3000);
+    }, interval);
   };
 
   const stopPolling = () => {
@@ -144,6 +146,7 @@ export const SessionDetailPage: React.FC = () => {
             }
           : null
       );
+      setLastStatusCheckAt(new Date());
 
       if (statusResponse.data.status === 'qr') {
         try {
@@ -168,6 +171,7 @@ export const SessionDetailPage: React.FC = () => {
     try {
       const response = await apiClient.get<Session>(`/sessions/${id}`);
       setSession(response.data);
+      setLastStatusCheckAt(new Date());
 
       if (response.data.status === 'qr') {
         try {
@@ -725,13 +729,6 @@ export const SessionDetailPage: React.FC = () => {
                   </button>
                 )}
                 <button
-                  onClick={loadSession}
-                  className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  <span>Refresh</span>
-                </button>
-                <button
                   onClick={handleDeleteSession}
                   disabled={actionLoading}
                   className="flex items-center gap-2 px-4 py-2 bg-red-700 hover:bg-red-800 disabled:bg-gray-600 text-white rounded-lg transition-colors"
@@ -774,8 +771,8 @@ export const SessionDetailPage: React.FC = () => {
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
             <h2 className="text-lg font-semibold text-white mb-4">Recent Events</h2>
             <div className="text-sm text-gray-400">
-              <p>Status polling active: {shouldPoll(session.status) ? 'Yes (every 3s)' : 'No'}</p>
-              <p className="mt-2">Last status check: {new Date().toLocaleTimeString()}</p>
+              <p>Status polling active: Yes ({shouldPoll(session.status) ? 'every 3s' : 'every 10s'})</p>
+              <p className="mt-2">Last status check: {lastStatusCheckAt ? lastStatusCheckAt.toLocaleTimeString() : '-'}</p>
             </div>
           </div>
         </>
