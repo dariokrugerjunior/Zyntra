@@ -75,6 +75,14 @@ export interface SessionConversation {
   totalMessages: number;
 }
 
+export interface SessionAutoReplyConfig {
+  enabled: boolean;
+  promptText: string | null;
+  provider: 'mock' | 'openai';
+  apiToken: string | null;
+  updatedAt: string | null;
+}
+
 export interface ToastMessage {
   id: string;
   type: 'success' | 'error' | 'info';

@@ -33,6 +33,11 @@ enum DeliveryStatus {
   failed
 }
 
+enum AutoReplyProvider {
+  mock
+  openai
+}
+
 model Company {
   id          String            @id @default(uuid()) @db.Uuid
   name        String
@@ -43,6 +48,7 @@ model Company {
   webhooks    Webhook[]
   messages    Message[]
   deliveries  WebhookDelivery[]
+  autoReplies SessionAutoReplyConfig[]
 }
 
 model ApiKey {
@@ -71,9 +77,27 @@ model WaSession {
 
   company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
   messages Message[]
+  autoReplyConfig SessionAutoReplyConfig?
 
   @@unique([companyId, name])
   @@index([companyId, status])
+}
+
+model SessionAutoReplyConfig {
+  id         String            @id @default(uuid()) @db.Uuid
+  companyId  String            @db.Uuid
+  sessionId  String            @db.Uuid @unique
+  enabled    Boolean           @default(false)
+  promptText String?
+  provider   AutoReplyProvider @default(mock)
+  apiToken   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  company Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  session WaSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, sessionId])
 }
 
 model Webhook {

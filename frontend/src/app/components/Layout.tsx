@@ -30,7 +30,7 @@ const navItems = [
 export const Layout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, mode } = useAuthStore();
+  const { logout, mode, companyId, companyName } = useAuthStore();
   const { darkMode, toggleDarkMode, sidebarCollapsed, setSidebarCollapsed } = useUiStore();
   const [connected, setConnected] = React.useState(true);
 
@@ -49,9 +49,7 @@ export const Layout: React.FC = () => {
           `}
         >
           <div className="flex items-center justify-between p-4 border-b border-gray-700">
-            {!sidebarCollapsed && (
-              <h1 className="text-lg font-bold text-white">Zyntra</h1>
-            )}
+            {!sidebarCollapsed && <h1 className="text-lg font-bold text-white">Zyntra</h1>}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="p-1 hover:bg-gray-700 rounded transition-colors"
@@ -59,6 +57,13 @@ export const Layout: React.FC = () => {
               {sidebarCollapsed ? <Menu className="w-5 h-5" /> : <X className="w-5 h-5" />}
             </button>
           </div>
+
+          {!sidebarCollapsed && (
+            <div className="px-4 py-3 border-b border-gray-700">
+              <p className="text-[11px] uppercase tracking-wider text-gray-400">Empresa logada</p>
+              <p className="text-sm text-gray-200 mt-1 break-all">{companyName || companyId || 'não identificada'}</p>
+            </div>
+          )}
 
           <nav className="p-4 space-y-2">
             {navItems.map((item) => {

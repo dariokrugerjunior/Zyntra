@@ -30,7 +30,16 @@ export async function authenticateCredential(mode: "api-key" | "jwt", credential
         throw new HttpError(401, "invalid_token");
       }
 
-      return { companyId: payload.companyId, authType: "jwt" as const };
+      const company = await prisma.company.findUnique({
+        where: { id: payload.companyId },
+        select: { name: true }
+      });
+
+      if (!company) {
+        throw new HttpError(401, "invalid_token");
+      }
+
+      return { companyId: payload.companyId, companyName: company.name, authType: "jwt" as const };
     } catch {
       throw new HttpError(401, "invalid_token");
     }
@@ -38,12 +47,16 @@ export async function authenticateCredential(mode: "api-key" | "jwt", credential
 
   const keys = await prisma.apiKey.findMany({
     where: { revokedAt: null },
-    select: { companyId: true, keyHash: true }
+    select: { companyId: true, keyHash: true, company: { select: { name: true } } }
   });
 
   for (const stored of keys) {
     if (await bcrypt.compare(credential, stored.keyHash)) {
-      return { companyId: stored.companyId, authType: "apiKey" as const };
+      return {
+        companyId: stored.companyId,
+        companyName: stored.company.name,
+        authType: "apiKey" as const
+      };
     }
   }
 

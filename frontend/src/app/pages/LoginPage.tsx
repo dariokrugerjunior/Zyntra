@@ -31,12 +31,14 @@ export const LoginPage: React.FC = () => {
       const validated = loginSchema.parse({ mode, credential });
       setLoading(true);
 
-      await apiClient.post('/auth/login', {
+      const response = await apiClient.post('/auth/login', {
         mode: validated.mode,
         credential: validated.credential,
       });
 
-      login(validated.mode, validated.credential);
+      const companyId = typeof response.data?.companyId === 'string' ? response.data.companyId : null;
+      const companyName = typeof response.data?.companyName === 'string' ? response.data.companyName : null;
+      login(validated.mode, validated.credential, companyId, companyName);
       addToast('success', 'Successfully authenticated');
       navigate('/');
     } catch (error: any) {

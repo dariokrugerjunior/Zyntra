@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router';
 import QRCodeLib from 'qrcode';
-import { ArrowLeft, Play, Square, RefreshCw, MessageSquare, SendHorizontal, Trash2 } from 'lucide-react';
+import { ArrowLeft, Play, Square, RefreshCw, MessageSquare, SendHorizontal, Trash2, Bot } from 'lucide-react';
 import { apiClient } from '../../lib/api-client';
 import { mapSessionQr } from '../../lib/api-mappers';
 import { useUiStore } from '../../stores/ui-store';
-import { Session, SessionConversation, SessionMessage, SessionQR, SessionStatus } from '../../types';
+import { Session, SessionAutoReplyConfig, SessionConversation, SessionMessage, SessionQR, SessionStatus } from '../../types';
 import { Loader } from '../components/Loader';
 import { StatusBadge } from '../components/StatusBadge';
 
@@ -20,7 +20,7 @@ export const SessionDetailPage: React.FC = () => {
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'details' | 'conversation'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'conversation' | 'prompt'>('details');
   const [conversations, setConversations] = useState<SessionConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<SessionConversation | null>(null);
@@ -31,6 +31,15 @@ export const SessionDetailPage: React.FC = () => {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversationSendLoading, setConversationSendLoading] = useState(false);
   const [chatText, setChatText] = useState('');
+  const [autoReplyConfig, setAutoReplyConfig] = useState<SessionAutoReplyConfig>({
+    enabled: false,
+    promptText: '',
+    provider: 'mock',
+    apiToken: '',
+    updatedAt: null
+  });
+  const [autoReplyLoading, setAutoReplyLoading] = useState(false);
+  const [autoReplySaving, setAutoReplySaving] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -83,6 +92,11 @@ export const SessionDetailPage: React.FC = () => {
       loadMessages(true);
     }
   }, [selectedConversation?.contact]);
+
+  useEffect(() => {
+    if (!id || activeTab !== 'prompt') return;
+    loadAutoReplyConfig();
+  }, [id, activeTab]);
 
   const shouldPoll = (status: SessionStatus) => status === 'starting' || status === 'qr';
 
@@ -207,6 +221,55 @@ export const SessionDetailPage: React.FC = () => {
       if (showLoader) addToast('error', error.message || 'Failed to load messages');
     } finally {
       if (showLoader) setMessagesLoading(false);
+    }
+  };
+
+  const loadAutoReplyConfig = async () => {
+    if (!id) return;
+    setAutoReplyLoading(true);
+    try {
+      const response = await apiClient.get<SessionAutoReplyConfig>(`/sessions/${id}/auto-reply`);
+      setAutoReplyConfig({
+        enabled: response.data.enabled,
+        promptText: response.data.promptText ?? '',
+        provider: response.data.provider ?? 'mock',
+        apiToken: response.data.apiToken ?? '',
+        updatedAt: response.data.updatedAt ?? null
+      });
+    } catch (error: any) {
+      addToast('error', error.message || 'Falha ao carregar configuracao de auto-resposta');
+    } finally {
+      setAutoReplyLoading(false);
+    }
+  };
+
+  const handleSaveAutoReplyConfig = async () => {
+    if (!id) return;
+    if (autoReplyConfig.enabled && !String(autoReplyConfig.promptText ?? '').trim()) {
+      addToast('error', 'Informe o texto de resposta quando auto-responder estiver ativo');
+      return;
+    }
+
+    setAutoReplySaving(true);
+    try {
+      const response = await apiClient.put<SessionAutoReplyConfig>(`/sessions/${id}/auto-reply`, {
+        enabled: autoReplyConfig.enabled,
+        promptText: autoReplyConfig.promptText ?? '',
+        provider: autoReplyConfig.provider,
+        apiToken: autoReplyConfig.apiToken ?? ''
+      });
+      setAutoReplyConfig({
+        enabled: response.data.enabled,
+        promptText: response.data.promptText ?? '',
+        provider: response.data.provider ?? 'mock',
+        apiToken: response.data.apiToken ?? '',
+        updatedAt: response.data.updatedAt ?? null
+      });
+      addToast('success', 'Configuracao de auto-resposta salva');
+    } catch (error: any) {
+      addToast('error', error.message || 'Falha ao salvar auto-resposta');
+    } finally {
+      setAutoReplySaving(false);
     }
   };
 
@@ -387,6 +450,13 @@ export const SessionDetailPage: React.FC = () => {
           <MessageSquare className="w-4 h-4" />
           Conversa
         </button>
+        <button
+          onClick={() => setActiveTab('prompt')}
+          className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${activeTab === 'prompt' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+        >
+          <Bot className="w-4 h-4" />
+          Prompt
+        </button>
       </div>
 
       {activeTab === 'conversation' && (
@@ -501,6 +571,92 @@ export const SessionDetailPage: React.FC = () => {
               </>
             )}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'prompt' && (
+        <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 space-y-4">
+          {autoReplyLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader size="lg" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Auto-responder</h2>
+                  <p className="text-sm text-gray-400">
+                    Quando ativo, toda mensagem recebida na sessao gera resposta automatica (modo mock).
+                  </p>
+                </div>
+                <label className="inline-flex items-center gap-2 text-sm text-gray-200">
+                  <input
+                    type="checkbox"
+                    checked={autoReplyConfig.enabled}
+                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                  />
+                  Ativo
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">Texto/Prompt da resposta</label>
+                <textarea
+                  value={autoReplyConfig.promptText ?? ''}
+                  onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, promptText: e.target.value }))}
+                  maxLength={10000}
+                  rows={6}
+                  className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  placeholder="Ex: Responda de forma cordial em portugues, com no maximo 2 frases..."
+                />
+                <p className="mt-1 text-xs text-gray-400">
+                  {(autoReplyConfig.promptText ?? '').length}/10000 caracteres
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Provedor IA</label>
+                  <select
+                    value={autoReplyConfig.provider}
+                    onChange={(e) =>
+                      setAutoReplyConfig((prev) => ({
+                        ...prev,
+                        provider: (e.target.value as 'mock' | 'openai') ?? 'mock'
+                      }))
+                    }
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                  >
+                    <option value="mock">Mock (sem IA real)</option>
+                    <option value="openai">OpenAI (placeholder)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Token API (opcional por enquanto)</label>
+                  <input
+                    type="password"
+                    value={autoReplyConfig.apiToken ?? ''}
+                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, apiToken: e.target.value }))}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    placeholder="sk-..."
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-400">
+                  Ultima atualizacao: {autoReplyConfig.updatedAt ? new Date(autoReplyConfig.updatedAt).toLocaleString() : 'nunca'}
+                </p>
+                <button
+                  onClick={handleSaveAutoReplyConfig}
+                  disabled={autoReplySaving}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-white"
+                >
+                  {autoReplySaving ? 'Salvando...' : 'Salvar Configuracao'}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
 

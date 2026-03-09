@@ -3,6 +3,8 @@ import { z } from "zod";
 import { prisma } from "../../infra/db/prisma";
 import { enqueueWebhookDeliveries } from "../webhooks/service";
 import { logger } from "../../shared/utils/logger";
+import { sendTextQueue } from "../../infra/queue/bullmq";
+import OpenAI from "openai";
 
 const workerEventSchema = z.object({
   eventType: z.enum([
@@ -28,6 +30,44 @@ function sanitizePayload(payload: Record<string, unknown>) {
   }
   return cloned;
 }
+
+function buildMockAutoReply(promptText: string) {
+  return promptText.trim();
+}
+
+async function generateOpenAIReply(input: {
+  apiToken: string;
+  instructions: string;
+  incomingText: string;
+}) {
+  const client = new OpenAI({
+    apiKey: input.apiToken
+  });
+
+  const response = await client.responses.create({
+    model: process.env.OPENAI_MODEL || "gpt-5",
+    instructions: input.instructions,
+    input: [
+      {
+        role: "user",
+        content: input.incomingText
+      }
+    ]
+  });
+
+  const reply = String(response.output_text ?? "").trim();
+  if (!reply) {
+    throw new Error("empty_response_from_model");
+  }
+  return reply;
+}
+
+type AutoReplyRuntimeConfig = {
+  enabled: boolean;
+  promptText: string | null;
+  provider: string;
+  apiToken: string | null;
+};
 
 export async function ingestWorkerEvent(input: unknown) {
   const event = workerEventSchema.parse(input);
@@ -76,6 +116,54 @@ export async function ingestWorkerEvent(input: unknown) {
         payload: payload as Prisma.InputJsonValue
       }
     });
+
+    const configRows = await prisma.$queryRaw<AutoReplyRuntimeConfig[]>`
+      SELECT "enabled", "promptText", "provider", "apiToken"
+      FROM "SessionAutoReplyConfig"
+      WHERE "sessionId" = ${event.sessionId}::uuid
+      LIMIT 1
+    `;
+    const config = configRows[0];
+
+    const to = (event.payload.from as string | undefined) ?? null;
+    const incomingText =
+      (event.payload.text as string | undefined) ??
+      (event.payload.caption as string | undefined) ??
+      null;
+
+    if (config?.enabled && config.promptText?.trim() && to && to !== "status@broadcast") {
+      const promptText = config.promptText.trim();
+      const userMessage = incomingText?.trim() || "(sem texto)";
+
+      let generatedText = buildMockAutoReply(promptText);
+
+      if (config.provider === "openai" && config.apiToken?.trim()) {
+        try {
+          generatedText = await generateOpenAIReply({
+            apiToken: config.apiToken.trim(),
+            instructions: promptText,
+            incomingText: userMessage
+          });
+        } catch (error) {
+          logger.error(
+            { companyId: event.companyId, sessionId: event.sessionId, err: error },
+            "auto-reply openai failed, falling back to promptText"
+          );
+          generatedText = "Estivemos Problema em Responder a sua Mensagem. Por favor, tente novamente mais tarde."
+        }
+      }
+
+      await sendTextQueue.add(
+        `auto-reply-${event.companyId}-${event.sessionId}-${Date.now()}`,
+        {
+          companyId: event.companyId,
+          sessionId: event.sessionId,
+          to,
+          text: generatedText
+        },
+        { removeOnComplete: true, removeOnFail: false }
+      );
+    }
   }
 
   if (event.eventType === "message.sent") {
@@ -156,4 +244,3 @@ export async function ingestWorkerEvent(input: unknown) {
   await enqueueWebhookDeliveries(event.companyId, event.eventType, event.sessionId, envelope);
   logger.info({ eventType: event.eventType, companyId: event.companyId, sessionId: event.sessionId }, "worker event ingested");
 }
-

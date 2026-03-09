@@ -17,6 +17,7 @@ authRouter.post("/auth/login", async (req, res) => {
   return res.json({
     authenticated: true,
     companyId: auth.companyId,
+    companyName: auth.companyName,
     authType: auth.authType
   });
 });

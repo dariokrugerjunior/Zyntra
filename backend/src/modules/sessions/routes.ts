@@ -1,6 +1,16 @@
 import { Router } from "express";
 import { z } from "zod";
-import { createSession, deleteSession, getSessionById, listSessions, startSession, stopSession, syncSessionHistory } from "./service";
+import {
+  createSession,
+  deleteSession,
+  getSessionAutoReplyConfig,
+  getSessionById,
+  listSessions,
+  startSession,
+  stopSession,
+  syncSessionHistory,
+  upsertSessionAutoReplyConfig
+} from "./service";
 
 export const sessionsRouter = Router();
 
@@ -54,4 +64,16 @@ sessionsRouter.get("/sessions/:id/status", async (req, res) => {
   const id = z.string().uuid().parse(req.params.id);
   const session = await getSessionById(req.context!.companyId, id);
   return res.json({ sessionId: session.id, status: session.status, phoneNumber: session.phoneNumber ?? null });
+});
+
+sessionsRouter.get("/sessions/:id/auto-reply", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const config = await getSessionAutoReplyConfig(req.context!.companyId, id);
+  return res.json(config);
+});
+
+sessionsRouter.put("/sessions/:id/auto-reply", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const config = await upsertSessionAutoReplyConfig(req.context!.companyId, id, req.body);
+  return res.status(200).json(config);
 });

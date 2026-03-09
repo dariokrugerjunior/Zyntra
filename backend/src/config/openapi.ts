@@ -237,6 +237,43 @@
         }
       }
     },
+    "/sessions/{id}/auto-reply": {
+      get: {
+        tags: ["Sessions"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Retorna configuracao de auto-resposta da sessao",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": { description: "Configuracao retornada" }
+        }
+      },
+      put: {
+        tags: ["Sessions"],
+        security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }],
+        summary: "Atualiza configuracao de auto-resposta da sessao",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["enabled"],
+                properties: {
+                  enabled: { type: "boolean" },
+                  promptText: { type: "string" },
+                  provider: { type: "string", enum: ["mock", "openai"] },
+                  apiToken: { type: "string" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Configuracao atualizada" }
+        }
+      }
+    },
     "/sessions/{id}/messages/text": {
       post: {
         tags: ["Messages"],

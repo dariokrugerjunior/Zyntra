@@ -7,7 +7,14 @@ interface AuthState {
   isAuthenticated: boolean;
   mode: AuthMode | null;
   credential: string | null;
-  login: (mode: AuthMode, credential: string) => void;
+  companyId: string | null;
+  companyName: string | null;
+  login: (
+    mode: AuthMode,
+    credential: string,
+    companyId?: string | null,
+    companyName?: string | null
+  ) => void;
   logout: () => void;
 }
 
@@ -17,13 +24,26 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       mode: null,
       credential: null,
-      login: (mode: AuthMode, credential: string) => {
+      companyId: null,
+      companyName: null,
+      login: (
+        mode: AuthMode,
+        credential: string,
+        companyId?: string | null,
+        companyName?: string | null
+      ) => {
         setAuthHeader(mode, credential);
-        set({ isAuthenticated: true, mode, credential });
+        set({
+          isAuthenticated: true,
+          mode,
+          credential,
+          companyId: companyId ?? null,
+          companyName: companyName ?? null
+        });
       },
       logout: () => {
         clearAuthHeader();
-        set({ isAuthenticated: false, mode: null, credential: null });
+        set({ isAuthenticated: false, mode: null, credential: null, companyId: null, companyName: null });
       },
     }),
     {
