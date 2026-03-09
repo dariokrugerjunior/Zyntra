@@ -1,0 +1,29 @@
+import { config } from "dotenv";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { z } from "zod";
+
+const envCandidates = [
+  process.env.ENV_FILE,
+  process.env.NODE_ENV === "production" ? ".env.production" : ".env.local",
+  ".env"
+].filter((value): value is string => Boolean(value));
+
+for (const envFile of envCandidates) {
+  const envPath = resolve(process.cwd(), envFile);
+  if (existsSync(envPath)) {
+    config({ path: envPath });
+    break;
+  }
+}
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  REDIS_URL: z.string().min(1),
+  BACKEND_INTERNAL_URL: z.string().url(),
+  WORKER_SECRET: z.string().min(1),
+  BAILEYS_STORAGE_PATH: z.string().min(1),
+  LOG_LEVEL: z.string().default("info")
+});
+
+export const env = envSchema.parse(process.env);

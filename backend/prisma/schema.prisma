@@ -1,0 +1,129 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CompanyStatus {
+  active
+  inactive
+}
+
+enum SessionStatus {
+  created
+  starting
+  qr
+  ready
+  disconnected
+  stopped
+  error
+}
+
+enum MessageDirection {
+  in
+  out
+}
+
+enum DeliveryStatus {
+  pending
+  success
+  failed
+}
+
+model Company {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  status      CompanyStatus     @default(active)
+  createdAt   DateTime          @default(now())
+  apiKeys     ApiKey[]
+  sessions    WaSession[]
+  webhooks    Webhook[]
+  messages    Message[]
+  deliveries  WebhookDelivery[]
+}
+
+model ApiKey {
+  id        String    @id @default(uuid()) @db.Uuid
+  companyId String    @db.Uuid
+  name      String
+  keyHash   String
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, revokedAt])
+}
+
+model WaSession {
+  id          String        @id @default(uuid()) @db.Uuid
+  companyId   String        @db.Uuid
+  name        String
+  status      SessionStatus @default(created)
+  phoneNumber String?
+  lastSeenAt  DateTime?
+  latestQr    String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@unique([companyId, name])
+  @@index([companyId, status])
+}
+
+model Webhook {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  url        String
+  secret     String
+  eventsJson Json
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company    Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([companyId, isActive])
+}
+
+model Message {
+  id          String           @id @default(uuid()) @db.Uuid
+  companyId   String           @db.Uuid
+  sessionId   String           @db.Uuid
+  direction   MessageDirection
+  waMessageId String?
+  to          String?
+  from        String?
+  payload     Json
+  createdAt   DateTime         @default(now())
+
+  company Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  session WaSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, sessionId, createdAt(sort: Desc)])
+}
+
+model WebhookDelivery {
+  id          String         @id @default(uuid()) @db.Uuid
+  companyId   String         @db.Uuid
+  webhookId   String         @db.Uuid
+  eventType   String
+  payload     Json
+  attempt     Int            @default(0)
+  status      DeliveryStatus @default(pending)
+  nextRetryAt DateTime?
+  lastError   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([companyId, status, nextRetryAt])
+}

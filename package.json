@@ -1,0 +1,14 @@
+{
+  "name": "zyntra-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "backend",
+    "worker"
+  ],
+  "scripts": {
+    "build": "npm run -w backend build && npm run -w worker build",
+    "dev": "npm run -w backend dev",
+    "seed": "npm run -w backend seed"
+  }
+}
