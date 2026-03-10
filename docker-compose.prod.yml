@@ -1,0 +1,119 @@
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zyntra
+      POSTGRES_USER: zyntra
+      POSTGRES_PASSWORD: KFQtrxWAzsQbh8fT0yxa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zyntra -d zyntra"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "D2DNVEsGJpqUd0BBjZZ3"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a D2DNVEsGJpqUd0BBjZZ3 ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      POSTGRES_DB: zyntra
+      POSTGRES_USER: zyntra
+      POSTGRES_PASSWORD: D2DKFQtrxWAzsQbh8fT0yxa
+      REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
+      DATABASE_URL: postgresql://zyntra:D2DKFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
+      REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
+      CORS_ORIGIN: https://app.seu-dominio.com
+      JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
+      WORKER_SECRET: Vp2wRHvJexUtwIXXbJUd5Je2yFmhKwx1uyuYH9yKqZhEwQqWRakgjhGyDnQ7FscT
+      SEED_API_KEY: zyn_seed_local_dev_2026
+      BACKEND_INTERNAL_URL: http://backend:3000
+      BAILEYS_STORAGE_PATH: /app/data
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://127.0.0.1:3000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      POSTGRES_DB: zyntra
+      POSTGRES_USER: zyntra
+      POSTGRES_PASSWORD: D2DKFQtrxWAzsQbh8fT0yxa
+      REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
+      DATABASE_URL: postgresql://zyntra:D2DKFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
+      REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
+      CORS_ORIGIN: https://app.seu-dominio.com
+      JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
+      WORKER_SECRET: Vp2wRHvJexUtwIXXbJUd5Je2yFmhKwx1uyuYH9yKqZhEwQqWRakgjhGyDnQ7FscT
+      SEED_API_KEY: zyn_seed_local_dev_2026
+      BACKEND_INTERNAL_URL: http://backend:3000
+      BAILEYS_STORAGE_PATH: /app/data
+      LOG_LEVEL: info
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./worker/data:/app/data
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: http://backend:3000
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_started
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
+
+volumes:
+  postgres_data:
+  redis_data:
