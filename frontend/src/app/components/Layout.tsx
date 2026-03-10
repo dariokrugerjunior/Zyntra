@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   MessageSquare,
   Smartphone,
-  Webhook,
   Key,
   Settings,
   LogOut,
@@ -23,7 +22,6 @@ const navItems = [
   { path: '/', label: 'Painel', icon: LayoutDashboard },
   { path: '/sessions', label: 'Sessoes', icon: Smartphone },
   { path: '/messages', label: 'Mensagens', icon: MessageSquare },
-  { path: '/webhooks', label: 'Webhooks', icon: Webhook },
   { path: '/api-keys', label: 'Chaves de API', icon: Key },
   { path: '/settings', label: 'Configuracoes', icon: Settings },
 ];
