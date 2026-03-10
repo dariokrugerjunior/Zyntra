@@ -35,6 +35,7 @@ export const SessionDetailPage: React.FC = () => {
     enabled: false,
     promptText: '',
     provider: 'mock',
+    aiModel: 'gpt-5',
     apiToken: '',
     updatedAt: null
   });
@@ -237,6 +238,7 @@ export const SessionDetailPage: React.FC = () => {
         enabled: response.data.enabled,
         promptText: response.data.promptText ?? '',
         provider: response.data.provider ?? 'mock',
+        aiModel: response.data.aiModel ?? 'gpt-5',
         apiToken: response.data.apiToken ?? '',
         updatedAt: response.data.updatedAt ?? null
       });
@@ -260,12 +262,14 @@ export const SessionDetailPage: React.FC = () => {
         enabled: autoReplyConfig.enabled,
         promptText: autoReplyConfig.promptText ?? '',
         provider: autoReplyConfig.provider,
+        aiModel: autoReplyConfig.aiModel ?? 'gpt-5',
         apiToken: autoReplyConfig.apiToken ?? ''
       });
       setAutoReplyConfig({
         enabled: response.data.enabled,
         promptText: response.data.promptText ?? '',
         provider: response.data.provider ?? 'mock',
+        aiModel: response.data.aiModel ?? 'gpt-5',
         apiToken: response.data.apiToken ?? '',
         updatedAt: response.data.updatedAt ?? null
       });
@@ -635,6 +639,19 @@ export const SessionDetailPage: React.FC = () => {
                     <option value="openai">OpenAI (placeholder)</option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-sm text-gray-300 mb-2">Modelo da IA</label>
+                  <input
+                    type="text"
+                    value={autoReplyConfig.aiModel ?? 'gpt-5'}
+                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, aiModel: e.target.value }))}
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    placeholder="gpt-5"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Token API (opcional por enquanto)</label>
                   <input

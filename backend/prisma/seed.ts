@@ -6,13 +6,21 @@ const prisma = new PrismaClient();
 
 async function main() {
   const seedApiKey = process.env.SEED_API_KEY ?? "zyn_seed_local_dev_2026";
+  const seedCompanyUsername = process.env.SEED_COMPANY_USERNAME ?? "demo";
+  const seedCompanyPassword = process.env.SEED_COMPANY_PASSWORD ?? "admin123";
+  const companyPasswordHash = await bcrypt.hash(seedCompanyPassword, 10);
   const company = await prisma.company.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
-    update: {},
+    update: {
+      authUsername: seedCompanyUsername,
+      authPasswordHash: companyPasswordHash
+    },
     create: {
       id: "00000000-0000-0000-0000-000000000001",
       name: "Demo Company",
-      status: "active"
+      status: "active",
+      authUsername: seedCompanyUsername,
+      authPasswordHash: companyPasswordHash
     }
   });
 
@@ -53,6 +61,8 @@ async function main() {
   console.log(`Company ID: ${company.id}`);
   console.log(`ApiKey ID: ${created.id}`);
   console.log(`Login API key: ${seedApiKey}`);
+  console.log(`Company username: ${seedCompanyUsername}`);
+  console.log(`Company password: ${seedCompanyPassword}`);
 }
 
 main()

@@ -37,6 +37,7 @@ function buildMockAutoReply(promptText: string) {
 
 async function generateOpenAIReply(input: {
   apiToken: string;
+  model: string;
   instructions: string;
   incomingText: string;
 }) {
@@ -45,7 +46,7 @@ async function generateOpenAIReply(input: {
   });
 
   const response = await client.responses.create({
-    model: process.env.OPENAI_MODEL || "gpt-5",
+    model: input.model,
     instructions: input.instructions,
     input: [
       {
@@ -66,6 +67,7 @@ type AutoReplyRuntimeConfig = {
   enabled: boolean;
   promptText: string | null;
   provider: string;
+  aiModel: string;
   apiToken: string | null;
 };
 
@@ -118,7 +120,7 @@ export async function ingestWorkerEvent(input: unknown) {
     });
 
     const configRows = await prisma.$queryRaw<AutoReplyRuntimeConfig[]>`
-      SELECT "enabled", "promptText", "provider", "apiToken"
+      SELECT "enabled", "promptText", "provider", "aiModel", "apiToken"
       FROM "SessionAutoReplyConfig"
       WHERE "sessionId" = ${event.sessionId}::uuid
       LIMIT 1
@@ -141,6 +143,7 @@ export async function ingestWorkerEvent(input: unknown) {
         try {
           generatedText = await generateOpenAIReply({
             apiToken: config.apiToken.trim(),
+            model: config.aiModel?.trim() || process.env.OPENAI_MODEL || "gpt-5",
             instructions: promptText,
             incomingText: userMessage
           });

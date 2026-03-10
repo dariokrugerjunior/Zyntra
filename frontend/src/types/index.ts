@@ -1,4 +1,4 @@
-export type AuthMode = 'api-key' | 'jwt';
+export type AuthMode = 'api-key' | 'company';
 
 export type SessionStatus = 
   | 'created' 
@@ -79,6 +79,7 @@ export interface SessionAutoReplyConfig {
   enabled: boolean;
   promptText: string | null;
   provider: 'mock' | 'openai';
+  aiModel: string;
   apiToken: string | null;
   updatedAt: string | null;
 }

@@ -14,6 +14,7 @@ const upsertAutoReplySchema = z
     enabled: z.boolean(),
     promptText: z.string().max(10000).optional(),
     provider: z.enum(["mock", "openai"]).default("mock"),
+    aiModel: z.string().max(120).optional(),
     apiToken: z.string().max(2048).optional()
   })
   .superRefine((value, ctx) => {
@@ -37,6 +38,7 @@ type AutoReplyConfigRow = {
   enabled: boolean;
   promptText: string | null;
   provider: string;
+  aiModel: string;
   apiToken: string | null;
   updatedAt: Date;
 };
@@ -164,7 +166,7 @@ export async function getSessionAutoReplyConfig(companyId: string, sessionId: st
   await getSessionById(companyId, sessionId);
 
   const rows = await prisma.$queryRaw<AutoReplyConfigRow[]>`
-    SELECT "enabled", "promptText", "provider", "apiToken", "updatedAt"
+    SELECT "enabled", "promptText", "provider", "aiModel", "apiToken", "updatedAt"
     FROM "SessionAutoReplyConfig"
     WHERE "sessionId" = ${sessionId}::uuid
     LIMIT 1
@@ -176,6 +178,7 @@ export async function getSessionAutoReplyConfig(companyId: string, sessionId: st
       enabled: false,
       promptText: "",
       provider: "mock" as const,
+      aiModel: "gpt-5",
       apiToken: "",
       updatedAt: null
     }
@@ -186,24 +189,26 @@ export async function upsertSessionAutoReplyConfig(companyId: string, sessionId:
   await getSessionById(companyId, sessionId);
   const data = upsertAutoReplySchema.parse(body);
   const promptText = data.promptText?.trim() ?? null;
+  const aiModel = data.aiModel?.trim() || "gpt-5";
   const apiToken = data.apiToken?.trim() ?? null;
 
   await prisma.$executeRaw`
     INSERT INTO "SessionAutoReplyConfig"
-      ("id", "companyId", "sessionId", "enabled", "promptText", "provider", "apiToken", "createdAt", "updatedAt")
+      ("id", "companyId", "sessionId", "enabled", "promptText", "provider", "aiModel", "apiToken", "createdAt", "updatedAt")
     VALUES
-      (${randomUUID()}::uuid, ${companyId}::uuid, ${sessionId}::uuid, ${data.enabled}, ${promptText}, ${data.provider}::"AutoReplyProvider", ${apiToken}, NOW(), NOW())
+      (${randomUUID()}::uuid, ${companyId}::uuid, ${sessionId}::uuid, ${data.enabled}, ${promptText}, ${data.provider}::"AutoReplyProvider", ${aiModel}, ${apiToken}, NOW(), NOW())
     ON CONFLICT ("sessionId")
     DO UPDATE SET
       "enabled" = EXCLUDED."enabled",
       "promptText" = EXCLUDED."promptText",
       "provider" = EXCLUDED."provider",
+      "aiModel" = EXCLUDED."aiModel",
       "apiToken" = EXCLUDED."apiToken",
       "updatedAt" = NOW()
   `;
 
   const rows = await prisma.$queryRaw<AutoReplyConfigRow[]>`
-    SELECT "enabled", "promptText", "provider", "apiToken", "updatedAt"
+    SELECT "enabled", "promptText", "provider", "aiModel", "apiToken", "updatedAt"
     FROM "SessionAutoReplyConfig"
     WHERE "sessionId" = ${sessionId}::uuid
     LIMIT 1
@@ -213,6 +218,7 @@ export async function upsertSessionAutoReplyConfig(companyId: string, sessionId:
     enabled: config?.enabled ?? false,
     promptText: config?.promptText ?? null,
     provider: (config?.provider as "mock" | "openai") ?? "mock",
+    aiModel: config?.aiModel ?? "gpt-5",
     apiToken: config?.apiToken ?? null,
     updatedAt: config?.updatedAt ?? null
   };

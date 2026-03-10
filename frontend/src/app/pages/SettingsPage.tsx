@@ -56,7 +56,7 @@ export const SettingsPage: React.FC = () => {
               ) : (
                 <>
                   <Lock className="w-4 h-4 text-blue-400" />
-                  <span>JWT Token</span>
+                  <span>Usuario/Senha da companhia</span>
                 </>
               )}
             </div>

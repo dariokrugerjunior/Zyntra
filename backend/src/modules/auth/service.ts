@@ -21,30 +21,7 @@ export async function createApiKey(companyId: string, name: string) {
   return { ...key, apiKey: plainApiKey };
 }
 
-export async function authenticateCredential(mode: "api-key" | "jwt", credential: string) {
-  if (mode === "jwt") {
-    try {
-      const secret = env.JWT_SECRET;
-      const payload = jwt.verify(credential, secret) as { companyId?: string };
-      if (!payload.companyId) {
-        throw new HttpError(401, "invalid_token");
-      }
-
-      const company = await prisma.company.findUnique({
-        where: { id: payload.companyId },
-        select: { name: true }
-      });
-
-      if (!company) {
-        throw new HttpError(401, "invalid_token");
-      }
-
-      return { companyId: payload.companyId, companyName: company.name, authType: "jwt" as const };
-    } catch {
-      throw new HttpError(401, "invalid_token");
-    }
-  }
-
+async function authenticateApiKey(credential: string) {
   const keys = await prisma.apiKey.findMany({
     where: { revokedAt: null },
     select: { companyId: true, keyHash: true, company: { select: { name: true } } }
@@ -61,4 +38,48 @@ export async function authenticateCredential(mode: "api-key" | "jwt", credential
   }
 
   throw new HttpError(401, "invalid_api_key");
+}
+
+async function authenticateCompanyCredentials(username: string, password: string) {
+  const company = await prisma.company.findFirst({
+    where: {
+      authUsername: username,
+      status: "active"
+    },
+    select: {
+      id: true,
+      name: true,
+      authPasswordHash: true
+    }
+  });
+
+  if (!company?.authPasswordHash) {
+    throw new HttpError(401, "invalid_company_credentials");
+  }
+
+  const valid = await bcrypt.compare(password, company.authPasswordHash);
+  if (!valid) {
+    throw new HttpError(401, "invalid_company_credentials");
+  }
+
+  const token = jwt.sign({ companyId: company.id }, env.JWT_SECRET, { expiresIn: "12h" });
+
+  return {
+    companyId: company.id,
+    companyName: company.name,
+    authType: "jwt" as const,
+    token
+  };
+}
+
+export async function authenticateCredential(
+  input:
+    | { mode: "api-key"; credential: string }
+    | { mode: "company"; username: string; password: string }
+) {
+  if (input.mode === "api-key") {
+    return authenticateApiKey(input.credential);
+  }
+
+  return authenticateCompanyCredentials(input.username, input.password);
 }

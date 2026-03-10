@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 
 let authHeader: { key: string; value: string } | null = null;
 
-export const setAuthHeader = (mode: 'api-key' | 'jwt', credential: string) => {
+export const setAuthHeader = (mode: 'api-key' | 'company', credential: string) => {
   if (mode === 'api-key') {
     authHeader = { key: 'X-API-Key', value: credential };
   } else {
