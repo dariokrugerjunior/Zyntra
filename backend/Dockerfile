@@ -2,6 +2,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+RUN apk add --no-cache git python3 make g++
+
 COPY backend/package.json ./package.json
 RUN npm install
 
