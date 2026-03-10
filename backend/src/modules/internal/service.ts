@@ -198,9 +198,10 @@ export async function ingestWorkerEvent(input: unknown) {
           companyId: event.companyId,
           sessionId: event.sessionId,
           to,
-          text: generatedText
+          text: generatedText,
+          enqueuedAt: Date.now()
         },
-        { removeOnComplete: true, removeOnFail: false }
+        { removeOnComplete: true, removeOnFail: true, attempts: 1 }
       );
     }
   }

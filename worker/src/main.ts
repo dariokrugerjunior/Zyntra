@@ -1,4 +1,5 @@
-import { createQueueWorker, QUEUES } from "./infra/queue/bullmq";
+import { createQueueWorker, QUEUES, sendMediaQueue, sendTextQueue } from "./infra/queue/bullmq";
+import { redis } from "./infra/redis/redis";
 import { logger } from "./shared/logger/logger";
 import { env } from "./shared/utils/env";
 import { startSessionJob } from "./jobs/startSession.job";
@@ -9,6 +10,9 @@ import { purgeSessionJob } from "./jobs/purgeSession.job";
 import { cleanupOrphanSessionStorage } from "./infra/storage/orphan-cleanup";
 
 const ORPHAN_STORAGE_CLEANUP_EVERY_MS = 60 * 60 * 1000;
+const WORKER_HEARTBEAT_KEY = "worker:heartbeat";
+const WORKER_HEARTBEAT_TTL_SECONDS = 30;
+const WORKER_HEARTBEAT_EVERY_MS = 10_000;
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "unhandled promise rejection");
@@ -29,6 +33,21 @@ async function main() {
     "worker config loaded"
   );
 
+  await sendTextQueue.drain(true);
+  await sendMediaQueue.drain(true);
+  logger.warn("pending message queues drained on startup");
+
+  const heartbeatTick = async () => {
+    await redis.set(WORKER_HEARTBEAT_KEY, String(Date.now()), "EX", WORKER_HEARTBEAT_TTL_SECONDS);
+  };
+
+  await heartbeatTick();
+  setInterval(() => {
+    heartbeatTick().catch((error) => {
+      logger.error({ err: error }, "worker heartbeat failed");
+    });
+  }, WORKER_HEARTBEAT_EVERY_MS);
+
   const workers = [
     createQueueWorker(QUEUES.sessionStart, async (job) => {
       logger.info({ queue: QUEUES.sessionStart, jobId: job.id }, "processing job");
@@ -45,11 +64,11 @@ async function main() {
     createQueueWorker(QUEUES.sendText, async (job) => {
       logger.info({ queue: QUEUES.sendText, jobId: job.id }, "processing job");
       await sendTextJob(job.data);
-    }),
+    }, { maxStalledCount: 0 }),
     createQueueWorker(QUEUES.sendMedia, async (job) => {
       logger.info({ queue: QUEUES.sendMedia, jobId: job.id }, "processing job");
       await sendMediaJob(job.data);
-    })
+    }, { maxStalledCount: 0 })
   ];
 
   for (const w of workers) {

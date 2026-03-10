@@ -27,6 +27,15 @@ const listConversationsQuerySchema = z.object({
   search: z.string().min(2).max(40).optional()
 });
 
+const WORKER_HEARTBEAT_KEY = "worker:heartbeat";
+
+async function ensureWorkerOnline() {
+  const heartbeat = await redis.get(WORKER_HEARTBEAT_KEY);
+  if (!heartbeat) {
+    throw new HttpError(503, "worker_unavailable");
+  }
+}
+
 async function enforceRateLimit(companyId: string, sessionId: string) {
   const second = Math.floor(Date.now() / 1000);
   const companyKey = `rl:company:${companyId}:${second}`;
@@ -83,6 +92,7 @@ export async function enqueueTextMessage(
   idempotencyKey?: string
 ) {
   const data = sendTextSchema.parse(payload);
+  await ensureWorkerOnline();
   await requireReadySession(companyId, sessionId);
   await enforceRateLimit(companyId, sessionId);
   await enforceIdempotency(companyId, sessionId, idempotencyKey);
@@ -93,9 +103,10 @@ export async function enqueueTextMessage(
       companyId,
       sessionId,
       to: data.to,
-      text: data.text
+      text: data.text,
+      enqueuedAt: Date.now()
     },
-    { removeOnComplete: true, removeOnFail: false }
+    { removeOnComplete: true, removeOnFail: true, attempts: 1 }
   );
 
   return { jobId: job.id, status: "queued" };
@@ -108,6 +119,7 @@ export async function enqueueMediaMessage(
   idempotencyKey?: string
 ) {
   const data = sendMediaSchema.parse(payload);
+  await ensureWorkerOnline();
   await requireReadySession(companyId, sessionId);
   await enforceRateLimit(companyId, sessionId);
   await enforceIdempotency(companyId, sessionId, idempotencyKey);
@@ -121,9 +133,10 @@ export async function enqueueMediaMessage(
       base64: data.base64,
       mime: data.mime,
       fileName: data.fileName,
-      caption: data.caption
+      caption: data.caption,
+      enqueuedAt: Date.now()
     },
-    { removeOnComplete: true, removeOnFail: false }
+    { removeOnComplete: true, removeOnFail: true, attempts: 1 }
   );
 
   return { jobId: job.id, status: "queued" };

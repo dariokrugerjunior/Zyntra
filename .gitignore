@@ -9,5 +9,6 @@ backend/dist
 worker/dist
 frontend/dist
 worker/data
+worker/worker/data
 frontend/.env.local
 frontend/.env.production

@@ -184,7 +184,6 @@ export const LoginPage: React.FC = () => {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ex: demo"
                   />
                   {errors.username && (
                     <p className="mt-1 text-sm text-red-400">{errors.username}</p>
