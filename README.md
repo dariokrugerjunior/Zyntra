@@ -23,6 +23,31 @@ docker compose up -d --build
   - fallback para `.env` se os arquivos acima não existirem
 - Convenção do monorepo: manter os arquivos `.env*` na raiz do projeto.
 
+## Produção com domínio + HTTPS (Let's Encrypt)
+Pré-requisito:
+- DNS `A` de `zyntra.company` e `www.zyntra.company` apontando para o IP do servidor.
+
+Fluxo da primeira emissão do certificado:
+1. Emitir certificado (com porta 80 livre no host):
+```powershell
+docker run --rm -p 80:80 `
+  -v "${PWD}/deploy/certbot/conf:/etc/letsencrypt" `
+  certbot/certbot certonly --standalone `
+  -d zyntra.company -d www.zyntra.company `
+  --agree-tos -m SEU_EMAIL --no-eff-email
+```
+2. Subir produção:
+```powershell
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Renovação:
+- O serviço `certbot` no `docker-compose.prod.yml` já roda `renew` automaticamente.
+- Depois de uma renovação, recarregue o Nginx para aplicar o novo certificado:
+```powershell
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
 ## Seed (company + api key)
 O seed cria/atualiza 1 company (`Demo Company`) e 1 API key de login fixa (`SEED_API_KEY` no `.env.local`/`.env`), no padrão `zyn_...`:
 ```bash
