@@ -13,7 +13,7 @@ import { EmptyState } from '../components/EmptyState';
 import { TableSkeleton } from '../components/TableSkeleton';
 
 const createSessionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'Nome obrigatorio'),
 });
 
 export const SessionsListPage: React.FC = () => {
@@ -35,7 +35,7 @@ export const SessionsListPage: React.FC = () => {
       const response = await apiClient.get<Session[]>('/sessions');
       setSessions(response.data);
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load sessions');
+      addToast('error', error.message || 'Falha ao carregar sessoes');
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export const SessionsListPage: React.FC = () => {
 
       const response = await apiClient.post<Session>('/sessions', validated);
       setSessions([response.data, ...sessions]);
-      addToast('success', 'Session created successfully');
+      addToast('success', 'Sessao criada com sucesso');
       setShowCreateModal(false);
       setNewSessionName('');
     } catch (error: any) {
@@ -65,7 +65,7 @@ export const SessionsListPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to create session');
+        addToast('error', error.message || 'Falha ao criar sessao');
       }
     } finally {
       setCreating(false);
@@ -76,10 +76,10 @@ export const SessionsListPage: React.FC = () => {
     setActionLoading(sessionId);
     try {
       await apiClient.post(`/sessions/${sessionId}/start`);
-      addToast('success', 'Session started');
+      addToast('success', 'Sessao iniciada');
       await loadSessions();
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to start session');
+      addToast('error', error.message || 'Falha ao iniciar sessao');
     } finally {
       setActionLoading(null);
     }
@@ -89,10 +89,10 @@ export const SessionsListPage: React.FC = () => {
     setActionLoading(sessionId);
     try {
       await apiClient.post(`/sessions/${sessionId}/stop`);
-      addToast('success', 'Session stopped');
+      addToast('success', 'Sessao parada');
       await loadSessions();
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to stop session');
+      addToast('error', error.message || 'Falha ao parar sessao');
     } finally {
       setActionLoading(null);
     }
@@ -102,15 +102,15 @@ export const SessionsListPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Sessions</h1>
-          <p className="text-gray-400 mt-1">Manage your WhatsApp sessions</p>
+          <h1 className="text-2xl font-bold text-white">Sessoes</h1>
+          <p className="text-gray-400 mt-1">Gerencie suas sessoes de WhatsApp</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Session</span>
+          <span>Criar Sessao</span>
         </button>
       </div>
 
@@ -121,15 +121,15 @@ export const SessionsListPage: React.FC = () => {
           </div>
         ) : sessions.length === 0 ? (
           <EmptyState
-            title="No sessions yet"
-            description="Create your first WhatsApp session to get started"
+            title="Nenhuma sessao ainda"
+            description="Crie sua primeira sessao de WhatsApp para comecar"
             icon={<Smartphone className="w-12 h-12" />}
             action={
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
-                Create Session
+                Criar Sessao
               </button>
             }
           />
@@ -139,19 +139,19 @@ export const SessionsListPage: React.FC = () => {
               <thead className="bg-gray-900">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Name
+                    Nome
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Phone Number
+                    Numero de Telefone
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Updated At
+                    Atualizado Em
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
+                    Acoes
                   </th>
                 </tr>
               </thead>
@@ -175,7 +175,7 @@ export const SessionsListPage: React.FC = () => {
                         <Link
                           to={`/sessions/${session.id}`}
                           className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-600 rounded transition-colors"
-                          title="View Details"
+                          title="Ver Detalhes"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -184,7 +184,7 @@ export const SessionsListPage: React.FC = () => {
                             onClick={() => handleStopSession(session.id)}
                             disabled={actionLoading === session.id}
                             className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
-                            title="Stop Session"
+                            title="Parar Sessao"
                           >
                             {actionLoading === session.id ? (
                               <Loader size="sm" />
@@ -197,7 +197,7 @@ export const SessionsListPage: React.FC = () => {
                             onClick={() => handleStartSession(session.id)}
                             disabled={actionLoading === session.id}
                             className="p-2 text-green-400 hover:text-green-300 hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
-                            title="Start Session"
+                            title="Iniciar Sessao"
                           >
                             {actionLoading === session.id ? (
                               <Loader size="sm" />
@@ -219,12 +219,12 @@ export const SessionsListPage: React.FC = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New Session"
+        title="Criar Nova Sessao"
       >
         <form onSubmit={handleCreateSession} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-              Session Name
+              Nome da Sessao
             </label>
             <input
               type="text"
@@ -232,7 +232,7 @@ export const SessionsListPage: React.FC = () => {
               value={newSessionName}
               onChange={(e) => setNewSessionName(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Customer Support"
+              placeholder="Ex: Suporte ao Cliente"
             />
             {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
           </div>
@@ -243,7 +243,7 @@ export const SessionsListPage: React.FC = () => {
               onClick={() => setShowCreateModal(false)}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -253,10 +253,10 @@ export const SessionsListPage: React.FC = () => {
               {creating ? (
                 <>
                   <Loader size="sm" />
-                  <span>Creating...</span>
+                  <span>Criando...</span>
                 </>
               ) : (
-                <span>Create</span>
+                <span>Criar</span>
               )}
             </button>
           </div>

@@ -19,7 +19,7 @@ const loginSchema = z.object({
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['credential'],
-      message: 'API key is required'
+      message: 'API key obrigatoria'
     });
   }
 
@@ -28,14 +28,14 @@ const loginSchema = z.object({
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['username'],
-        message: 'Usuario is required'
+        message: 'Usuario obrigatorio'
       });
     }
     if (!value.password?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['password'],
-        message: 'Senha is required'
+        message: 'Senha obrigatoria'
       });
     }
   }
@@ -85,7 +85,7 @@ export const LoginPage: React.FC = () => {
       }
 
       login(validated.mode, credentialToStore, companyId, companyName);
-      addToast('success', 'Successfully authenticated');
+      addToast('success', 'Autenticado com sucesso');
       navigate('/');
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -98,7 +98,7 @@ export const LoginPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Authentication failed');
+        addToast('error', error.message || 'Falha na autenticacao');
       }
     } finally {
       setLoading(false);
@@ -114,12 +114,12 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div className="bg-gray-800 rounded-lg shadow-xl p-8">
-          <h2 className="text-xl font-semibold text-white mb-6">Sign In</h2>
+          <h2 className="text-xl font-semibold text-white mb-6">Entrar</h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Authentication Mode
+                Modo de Autenticacao
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -150,7 +150,7 @@ export const LoginPage: React.FC = () => {
                   `}
                 >
                   <Lock className="w-4 h-4" />
-                  <span className="text-sm font-medium">Usuario/Senha</span>
+                  <span className="text-sm font-medium">Usuario e Senha</span>
                 </button>
               </div>
             </div>
@@ -217,17 +217,17 @@ export const LoginPage: React.FC = () => {
               {loading ? (
                 <>
                   <Loader size="sm" />
-                  <span>Authenticating...</span>
+                    <span>Autenticando...</span>
                 </>
               ) : (
-                <span>Sign In</span>
+                <span>Entrar</span>
               )}
             </button>
           </form>
         </div>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Secure authentication via API Key ou usuario/senha da companhia
+          Autenticacao segura via API Key ou usuario/senha da companhia
         </p>
       </div>
     </div>

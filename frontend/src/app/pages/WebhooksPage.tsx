@@ -13,9 +13,9 @@ import { TableSkeleton } from '../components/TableSkeleton';
 import { Plus, Edit, Trash2, Power, Webhook as WebhookIcon, Key } from 'lucide-react';
 
 const webhookSchema = z.object({
-  url: z.string().url('Invalid URL'),
-  secret: z.string().min(1, 'Secret is required'),
-  events: z.array(z.string()).min(1, 'Select at least one event'),
+  url: z.string().url('URL invalida'),
+  secret: z.string().min(1, 'Segredo obrigatorio'),
+  events: z.array(z.string()).min(1, 'Selecione ao menos um evento'),
 });
 
 const availableEvents = [
@@ -54,7 +54,7 @@ export const WebhooksPage: React.FC = () => {
       const response = await apiClient.get<Webhook[]>('/webhooks');
       setWebhooks(response.data.map((item: any) => mapWebhook(item)));
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load webhooks');
+      addToast('error', error.message || 'Falha ao carregar webhooks');
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export const WebhooksPage: React.FC = () => {
 
       const response = await apiClient.post<Webhook>('/webhooks', validated);
       setWebhooks([mapWebhook(response.data as any), ...webhooks]);
-      addToast('success', 'Webhook created successfully');
+      addToast('success', 'Webhook criado com sucesso');
       setShowCreateModal(false);
       resetForm();
     } catch (error: any) {
@@ -84,7 +84,7 @@ export const WebhooksPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to create webhook');
+        addToast('error', error.message || 'Falha ao criar webhook');
       }
     } finally {
       setSubmitting(false);
@@ -103,7 +103,7 @@ export const WebhooksPage: React.FC = () => {
 
       await apiClient.patch(`/webhooks/${editingWebhook.id}`, validated);
       updateWebhook(editingWebhook.id, validated);
-      addToast('success', 'Webhook updated successfully');
+      addToast('success', 'Webhook atualizado com sucesso');
       setShowEditModal(false);
       setEditingWebhook(null);
       resetForm();
@@ -118,7 +118,7 @@ export const WebhooksPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to update webhook');
+        addToast('error', error.message || 'Falha ao atualizar webhook');
       }
     } finally {
       setSubmitting(false);
@@ -132,24 +132,24 @@ export const WebhooksPage: React.FC = () => {
         isActive: !webhook.isActive,
       });
       updateWebhook(webhook.id, { isActive: !webhook.isActive });
-      addToast('success', `Webhook ${webhook.isActive ? 'disabled' : 'enabled'}`);
+      addToast('success', `Webhook ${webhook.isActive ? 'desativado' : 'ativado'}`);
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to toggle webhook');
+      addToast('error', error.message || 'Falha ao alternar webhook');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleDeleteWebhook = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this webhook?')) return;
+    if (!confirm('Tem certeza que deseja excluir este webhook?')) return;
 
     setActionLoading(id);
     try {
       await apiClient.delete(`/webhooks/${id}`);
       removeWebhook(id);
-      addToast('success', 'Webhook deleted successfully');
+      addToast('success', 'Webhook excluido com sucesso');
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to delete webhook');
+      addToast('error', error.message || 'Falha ao excluir webhook');
     } finally {
       setActionLoading(null);
     }
@@ -188,7 +188,7 @@ export const WebhooksPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Webhooks</h1>
-          <p className="text-gray-400 mt-1">Manage webhook endpoints for events</p>
+          <p className="text-gray-400 mt-1">Gerencie endpoints de webhook para eventos</p>
         </div>
         <button
           onClick={() => {
@@ -198,7 +198,7 @@ export const WebhooksPage: React.FC = () => {
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Webhook</span>
+          <span>Criar Webhook</span>
         </button>
       </div>
 
@@ -209,8 +209,8 @@ export const WebhooksPage: React.FC = () => {
           </div>
         ) : webhooks.length === 0 ? (
           <EmptyState
-            title="No webhooks yet"
-            description="Create a webhook to receive real-time events from your sessions"
+            title="Nenhum webhook ainda"
+            description="Crie um webhook para receber eventos em tempo real das suas sessoes"
             icon={<WebhookIcon className="w-12 h-12" />}
             action={
               <button
@@ -220,7 +220,7 @@ export const WebhooksPage: React.FC = () => {
                 }}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
-                Create Webhook
+                Criar Webhook
               </button>
             }
           />
@@ -233,16 +233,16 @@ export const WebhooksPage: React.FC = () => {
                     URL
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Events
+                    Eventos
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Created At
+                    Criado Em
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
+                    Acoes
                   </th>
                 </tr>
               </thead>
@@ -254,7 +254,7 @@ export const WebhooksPage: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-300">
-                        {webhook.events.length} event{webhook.events.length !== 1 ? 's' : ''}
+                        {webhook.events.length} evento{webhook.events.length !== 1 ? 's' : ''}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -265,7 +265,7 @@ export const WebhooksPage: React.FC = () => {
                             : 'bg-gray-600 text-gray-300'
                         }`}
                       >
-                        {webhook.isActive ? 'Active' : 'Inactive'}
+                        {webhook.isActive ? 'Ativo' : 'Inativo'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-300">
@@ -277,7 +277,7 @@ export const WebhooksPage: React.FC = () => {
                           onClick={() => openEditModal(webhook)}
                           disabled={actionLoading === webhook.id}
                           className="p-2 text-blue-400 hover:text-blue-300 hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
-                          title="Edit"
+                          title="Editar"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -287,7 +287,7 @@ export const WebhooksPage: React.FC = () => {
                           className={`p-2 hover:bg-gray-600 rounded transition-colors disabled:opacity-50 ${
                             webhook.isActive ? 'text-yellow-400' : 'text-green-400'
                           }`}
-                          title={webhook.isActive ? 'Disable' : 'Enable'}
+                          title={webhook.isActive ? 'Desativar' : 'Ativar'}
                         >
                           {actionLoading === webhook.id ? (
                             <Loader size="sm" />
@@ -299,7 +299,7 @@ export const WebhooksPage: React.FC = () => {
                           onClick={() => handleDeleteWebhook(webhook.id)}
                           disabled={actionLoading === webhook.id}
                           className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
-                          title="Delete"
+                          title="Excluir"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -316,7 +316,7 @@ export const WebhooksPage: React.FC = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create Webhook"
+        title="Criar Webhook"
         size="lg"
       >
         <form onSubmit={handleCreateWebhook} className="space-y-4">
@@ -337,7 +337,7 @@ export const WebhooksPage: React.FC = () => {
 
           <div>
             <label htmlFor="secret" className="block text-sm font-medium text-gray-300 mb-2">
-              Secret
+              Segredo
             </label>
             <div className="flex gap-2">
               <input
@@ -346,7 +346,7 @@ export const WebhooksPage: React.FC = () => {
                 value={form.secret}
                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
                 className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Webhook secret"
+                placeholder="Segredo do webhook"
               />
               <button
                 type="button"
@@ -354,14 +354,14 @@ export const WebhooksPage: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
               >
                 <Key className="w-4 h-4" />
-                <span>Generate</span>
+                <span>Gerar</span>
               </button>
             </div>
             {errors.secret && <p className="mt-1 text-sm text-red-400">{errors.secret}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Events</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Eventos</label>
             <div className="space-y-2">
               {availableEvents.map((event) => (
                 <label key={event} className="flex items-center gap-2 cursor-pointer">
@@ -384,7 +384,7 @@ export const WebhooksPage: React.FC = () => {
               onClick={() => setShowCreateModal(false)}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -394,10 +394,10 @@ export const WebhooksPage: React.FC = () => {
               {submitting ? (
                 <>
                   <Loader size="sm" />
-                  <span>Creating...</span>
+                  <span>Criando...</span>
                 </>
               ) : (
-                <span>Create</span>
+                <span>Criar</span>
               )}
             </button>
           </div>
@@ -407,7 +407,7 @@ export const WebhooksPage: React.FC = () => {
       <Modal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-        title="Edit Webhook"
+        title="Editar Webhook"
         size="lg"
       >
         <form onSubmit={handleUpdateWebhook} className="space-y-4">
@@ -428,7 +428,7 @@ export const WebhooksPage: React.FC = () => {
 
           <div>
             <label htmlFor="edit-secret" className="block text-sm font-medium text-gray-300 mb-2">
-              Secret
+              Segredo
             </label>
             <div className="flex gap-2">
               <input
@@ -437,7 +437,7 @@ export const WebhooksPage: React.FC = () => {
                 value={form.secret}
                 onChange={(e) => setForm({ ...form, secret: e.target.value })}
                 className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Webhook secret"
+                placeholder="Segredo do webhook"
               />
               <button
                 type="button"
@@ -445,14 +445,14 @@ export const WebhooksPage: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
               >
                 <Key className="w-4 h-4" />
-                <span>Generate</span>
+                <span>Gerar</span>
               </button>
             </div>
             {errors.secret && <p className="mt-1 text-sm text-red-400">{errors.secret}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Events</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">Eventos</label>
             <div className="space-y-2">
               {availableEvents.map((event) => (
                 <label key={event} className="flex items-center gap-2 cursor-pointer">
@@ -475,7 +475,7 @@ export const WebhooksPage: React.FC = () => {
               onClick={() => setShowEditModal(false)}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -485,10 +485,10 @@ export const WebhooksPage: React.FC = () => {
               {submitting ? (
                 <>
                   <Loader size="sm" />
-                  <span>Updating...</span>
+                  <span>Atualizando...</span>
                 </>
               ) : (
-                <span>Update</span>
+                <span>Atualizar</span>
               )}
             </button>
           </div>

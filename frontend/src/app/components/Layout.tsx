@@ -20,12 +20,12 @@ import {
 } from 'lucide-react';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/sessions', label: 'Sessions', icon: Smartphone },
-  { path: '/messages', label: 'Messages', icon: MessageSquare },
+  { path: '/', label: 'Painel', icon: LayoutDashboard },
+  { path: '/sessions', label: 'Sessoes', icon: Smartphone },
+  { path: '/messages', label: 'Mensagens', icon: MessageSquare },
   { path: '/webhooks', label: 'Webhooks', icon: Webhook },
-  { path: '/api-keys', label: 'API Keys', icon: Key },
-  { path: '/settings', label: 'Settings', icon: Settings },
+  { path: '/api-keys', label: 'Chaves de API', icon: Key },
+  { path: '/settings', label: 'Configuracoes', icon: Settings },
 ];
 
 export const Layout: React.FC = () => {
@@ -112,7 +112,7 @@ export const Layout: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h2 className="text-xl font-semibold">
-                {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
+                {navItems.find((item) => item.path === location.pathname)?.label || 'Painel'}
               </h2>
             </div>
 
@@ -121,12 +121,12 @@ export const Layout: React.FC = () => {
                 {connected ? (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    <span className="text-xs text-gray-300">Connected</span>
+                    <span className="text-xs text-gray-300">Conectado</span>
                   </>
                 ) : (
                   <>
                     <XCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-xs text-gray-300">Disconnected</span>
+                    <span className="text-xs text-gray-300">Desconectado</span>
                   </>
                 )}
               </div>
@@ -134,7 +134,7 @@ export const Layout: React.FC = () => {
               <button
                 onClick={toggleDarkMode}
                 className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-                title={darkMode ? 'Light Mode' : 'Dark Mode'}
+                title={darkMode ? 'Modo claro' : 'Modo escuro'}
               >
                 {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
@@ -146,7 +146,7 @@ export const Layout: React.FC = () => {
                 className="flex items-center gap-2 px-3 py-2 hover:bg-gray-700 rounded-lg transition-colors text-gray-300 hover:text-white"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="text-sm">Logout</span>
+                <span className="text-sm">Sair</span>
               </button>
             </div>
           </div>

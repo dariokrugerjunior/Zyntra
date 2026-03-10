@@ -1,13 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router';
-import QRCodeLib from 'qrcode';
-import { ArrowLeft, Play, Square, MessageSquare, SendHorizontal, Trash2, Bot } from 'lucide-react';
-import { apiClient } from '../../lib/api-client';
-import { mapSessionQr } from '../../lib/api-mappers';
-import { useUiStore } from '../../stores/ui-store';
-import { Session, SessionAutoReplyConfig, SessionConversation, SessionMessage, SessionQR, SessionStatus } from '../../types';
-import { Loader } from '../components/Loader';
-import { StatusBadge } from '../components/StatusBadge';
+﻿import React, { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import QRCodeLib from "qrcode";
+import { ArrowLeft, Bot, MessageSquare, Play, SendHorizontal, Square, Trash2 } from "lucide-react";
+import { apiClient } from "../../lib/api-client";
+import { mapSessionQr } from "../../lib/api-mappers";
+import { useUiStore } from "../../stores/ui-store";
+import {
+  Session,
+  SessionAutoReplyConfig,
+  SessionConversation,
+  SessionMessage,
+  SessionQR,
+  SessionStatus
+} from "../../types";
+import { Loader } from "../components/Loader";
+import { StatusBadge } from "../components/StatusBadge";
 
 export const SessionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,23 +27,23 @@ export const SessionDetailPage: React.FC = () => {
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<'details' | 'conversation' | 'prompt'>('details');
+  const [activeTab, setActiveTab] = useState<"details" | "conversation" | "prompt">("details");
   const [conversations, setConversations] = useState<SessionConversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<SessionConversation | null>(null);
-  const [conversationSearch, setConversationSearch] = useState('');
-  const [syncState, setSyncState] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
+  const [conversationSearch, setConversationSearch] = useState("");
+  const [syncState, setSyncState] = useState<"idle" | "syncing" | "done" | "error">("idle");
 
   const [messages, setMessages] = useState<SessionMessage[]>([]);
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [conversationSendLoading, setConversationSendLoading] = useState(false);
-  const [chatText, setChatText] = useState('');
+  const [chatText, setChatText] = useState("");
   const [autoReplyConfig, setAutoReplyConfig] = useState<SessionAutoReplyConfig>({
     enabled: false,
-    promptText: '',
-    provider: 'mock',
-    aiModel: 'gpt-5',
-    apiToken: '',
+    promptText: "",
+    provider: "mock",
+    aiModel: "gpt-5",
+    apiToken: "",
     updatedAt: null
   });
   const [autoReplyLoading, setAutoReplyLoading] = useState(false);
@@ -71,7 +78,7 @@ export const SessionDetailPage: React.FC = () => {
   }, [qrData]);
 
   useEffect(() => {
-    if (!id || activeTab !== 'conversation') {
+    if (!id || activeTab !== "conversation") {
       stopConversationPolling();
       return;
     }
@@ -83,24 +90,24 @@ export const SessionDetailPage: React.FC = () => {
   }, [id, activeTab, conversationSearch, selectedConversation?.contact]);
 
   useEffect(() => {
-    if (!id || activeTab !== 'conversation') return;
+    if (!id || activeTab !== "conversation") return;
     if (autoSyncStartedRef.current[id]) return;
     autoSyncStartedRef.current[id] = true;
     triggerAutoSyncHistory();
   }, [id, activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'conversation' && selectedConversation) {
+    if (activeTab === "conversation" && selectedConversation) {
       loadMessages(true);
     }
   }, [selectedConversation?.contact]);
 
   useEffect(() => {
-    if (!id || activeTab !== 'prompt') return;
+    if (!id || activeTab !== "prompt") return;
     loadAutoReplyConfig();
   }, [id, activeTab]);
 
-  const shouldPoll = (status: SessionStatus) => status === 'starting' || status === 'qr';
+  const shouldPoll = (status: SessionStatus) => status === "starting" || status === "qr";
 
   const startPolling = () => {
     stopPolling();
@@ -136,20 +143,23 @@ export const SessionDetailPage: React.FC = () => {
     if (!id) return;
 
     try {
-      const statusResponse = await apiClient.get<{ status: SessionStatus; phoneNumber?: string }>(`/sessions/${id}/status`);
+      const statusResponse = await apiClient.get<{
+        status: SessionStatus;
+        phoneNumber?: string
+      }>(`/sessions/${id}/status`);
 
       setSession((prev) =>
         prev
           ? {
-              ...prev,
-              status: statusResponse.data.status,
-              phoneNumber: statusResponse.data.phoneNumber || prev.phoneNumber
-            }
+            ...prev,
+            status: statusResponse.data.status,
+            phoneNumber: statusResponse.data.phoneNumber || prev.phoneNumber
+          }
           : null
       );
       setLastStatusCheckAt(new Date());
 
-      if (statusResponse.data.status === 'qr') {
+      if (statusResponse.data.status === "qr") {
         try {
           const qrResponse = await apiClient.get<SessionQR>(`/sessions/${id}/qr`);
           setQrData(mapSessionQr(qrResponse.data as any));
@@ -174,7 +184,7 @@ export const SessionDetailPage: React.FC = () => {
       setSession(response.data);
       setLastStatusCheckAt(new Date());
 
-      if (response.data.status === 'qr') {
+      if (response.data.status === "qr") {
         try {
           const qrResponse = await apiClient.get<SessionQR>(`/sessions/${id}/qr`);
           setQrData(mapSessionQr(qrResponse.data as any));
@@ -183,28 +193,28 @@ export const SessionDetailPage: React.FC = () => {
         }
       }
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load session');
-      navigate('/sessions');
+      addToast("error", error.message || "Falha ao carregar sessao");
+      navigate("/sessions");
     } finally {
       setLoading(false);
     }
   };
 
   const loadConversations = async (showLoader: boolean) => {
-    if (!id || activeTab !== 'conversation') return;
+    if (!id || activeTab !== "conversation") return;
 
     if (showLoader) setConversationsLoading(true);
 
     try {
       const params = new URLSearchParams();
-      params.set('limit', '150');
-      if (conversationSearch.trim()) params.set('search', conversationSearch.trim());
+      params.set("limit", "150");
+      if (conversationSearch.trim()) params.set("search", conversationSearch.trim());
 
       const response = await apiClient.get<SessionConversation[]>(`/sessions/${id}/conversations?${params.toString()}`);
       const list = response.data;
       setConversations(list);
     } catch (error: any) {
-      if (showLoader) addToast('error', error.message || 'Failed to load conversations');
+      if (showLoader) addToast("error", error.message || "Falha ao carregar conversas");
     } finally {
       if (showLoader) setConversationsLoading(false);
     }
@@ -217,13 +227,13 @@ export const SessionDetailPage: React.FC = () => {
 
     try {
       const params = new URLSearchParams();
-      params.set('limit', '120');
-      params.set('with', selectedConversation.contact);
+      params.set("limit", "120");
+      params.set("with", selectedConversation.contact);
 
       const response = await apiClient.get<SessionMessage[]>(`/sessions/${id}/messages?${params.toString()}`);
       setMessages(response.data);
     } catch (error: any) {
-      if (showLoader) addToast('error', error.message || 'Failed to load messages');
+      if (showLoader) addToast("error", error.message || "Falha ao carregar mensagens");
     } finally {
       if (showLoader) setMessagesLoading(false);
     }
@@ -236,14 +246,14 @@ export const SessionDetailPage: React.FC = () => {
       const response = await apiClient.get<SessionAutoReplyConfig>(`/sessions/${id}/auto-reply`);
       setAutoReplyConfig({
         enabled: response.data.enabled,
-        promptText: response.data.promptText ?? '',
-        provider: response.data.provider ?? 'mock',
-        aiModel: response.data.aiModel ?? 'gpt-5',
-        apiToken: response.data.apiToken ?? '',
+        promptText: response.data.promptText ?? "",
+        provider: response.data.provider ?? "mock",
+        aiModel: response.data.aiModel ?? "gpt-5",
+        apiToken: response.data.apiToken ?? "",
         updatedAt: response.data.updatedAt ?? null
       });
     } catch (error: any) {
-      addToast('error', error.message || 'Falha ao carregar configuracao de auto-resposta');
+      addToast("error", error.message || "Falha ao carregar configuracao de auto-resposta");
     } finally {
       setAutoReplyLoading(false);
     }
@@ -251,8 +261,8 @@ export const SessionDetailPage: React.FC = () => {
 
   const handleSaveAutoReplyConfig = async () => {
     if (!id) return;
-    if (autoReplyConfig.enabled && !String(autoReplyConfig.promptText ?? '').trim()) {
-      addToast('error', 'Informe o texto de resposta quando auto-responder estiver ativo');
+    if (autoReplyConfig.enabled && !String(autoReplyConfig.promptText ?? "").trim()) {
+      addToast("error", "Informe o texto de resposta quando auto-responder estiver ativo");
       return;
     }
 
@@ -260,22 +270,22 @@ export const SessionDetailPage: React.FC = () => {
     try {
       const response = await apiClient.put<SessionAutoReplyConfig>(`/sessions/${id}/auto-reply`, {
         enabled: autoReplyConfig.enabled,
-        promptText: autoReplyConfig.promptText ?? '',
+        promptText: autoReplyConfig.promptText ?? "",
         provider: autoReplyConfig.provider,
-        aiModel: autoReplyConfig.aiModel ?? 'gpt-5',
-        apiToken: autoReplyConfig.apiToken ?? ''
+        aiModel: autoReplyConfig.aiModel ?? "gpt-5",
+        apiToken: autoReplyConfig.apiToken ?? ""
       });
       setAutoReplyConfig({
         enabled: response.data.enabled,
-        promptText: response.data.promptText ?? '',
-        provider: response.data.provider ?? 'mock',
-        aiModel: response.data.aiModel ?? 'gpt-5',
-        apiToken: response.data.apiToken ?? '',
+        promptText: response.data.promptText ?? "",
+        provider: response.data.provider ?? "mock",
+        aiModel: response.data.aiModel ?? "gpt-5",
+        apiToken: response.data.apiToken ?? "",
         updatedAt: response.data.updatedAt ?? null
       });
-      addToast('success', 'Configuracao de auto-resposta salva');
+      addToast("success", "Configuracao de auto-resposta salva");
     } catch (error: any) {
-      addToast('error', error.message || 'Falha ao salvar auto-resposta');
+      addToast("error", error.message || "Falha ao salvar auto-resposta");
     } finally {
       setAutoReplySaving(false);
     }
@@ -286,12 +296,12 @@ export const SessionDetailPage: React.FC = () => {
     if (!id) return;
 
     if (!selectedConversation?.contact || !chatText.trim()) {
-      addToast('error', 'Selecione uma conversa e digite uma mensagem');
+      addToast("error", "Selecione uma conversa e digite uma mensagem");
       return;
     }
 
-    if (session?.status !== 'ready') {
-      addToast('error', 'Session must be ready to send messages');
+    if (session?.status !== "ready") {
+      addToast("error", "A sessao precisa estar pronta para enviar mensagens");
       return;
     }
 
@@ -302,17 +312,17 @@ export const SessionDetailPage: React.FC = () => {
         { to: selectedConversation.contact, text: chatText.trim() },
         {
           headers: {
-            'Idempotency-Key': `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`
+            "Idempotency-Key": `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`
           }
         }
       );
 
-      setChatText('');
+      setChatText("");
       await loadMessages(false);
       await loadConversations(false);
-      addToast('success', 'Mensagem enviada para fila');
+      addToast("success", "Mensagem enviada para fila");
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to send message');
+      addToast("error", error.message || "Falha ao enviar mensagem");
     } finally {
       setConversationSendLoading(false);
     }
@@ -321,34 +331,34 @@ export const SessionDetailPage: React.FC = () => {
   const triggerAutoSyncHistory = async () => {
     if (!id) return;
 
-    setSyncState('syncing');
+    setSyncState("syncing");
     try {
       await apiClient.post(`/sessions/${id}/sync-history`);
       await loadSession();
       await loadConversations(false);
       await loadMessages(false);
-      setSyncState('done');
+      setSyncState("done");
     } catch {
       // Keep UI silent; periodic polling and live events continue even if this call fails
-      setSyncState('error');
+      setSyncState("error");
     }
   };
 
   const messageBody = (message: SessionMessage) => {
     const payload = message.payload ?? {};
-    const text = String(payload.text ?? '').trim();
+    const text = String(payload.text ?? "").trim();
     if (text) return text;
 
-    const caption = String(payload.caption ?? '').trim();
+    const caption = String(payload.caption ?? "").trim();
     if (caption) return caption;
 
-    const messageType = String(payload.messageType ?? '').trim();
-    if (messageType === 'media') {
-      const fileName = String(payload.fileName ?? '').trim();
-      return fileName ? `[midia] ${fileName}` : '[midia]';
+    const messageType = String(payload.messageType ?? "").trim();
+    if (messageType === "media") {
+      const fileName = String(payload.fileName ?? "").trim();
+      return fileName ? `[midia] ${fileName}` : "[midia]";
     }
 
-    return '[sem texto]';
+    return "[sem texto]";
   };
 
   const generateQRCode = async (text: string) => {
@@ -359,12 +369,12 @@ export const SessionDetailPage: React.FC = () => {
         width: 300,
         margin: 2,
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
+          dark: "#000000",
+          light: "#FFFFFF"
         }
       });
     } catch {
-      addToast('error', 'Failed to generate QR code');
+      addToast("error", "Falha ao gerar QR code");
     }
   };
 
@@ -374,10 +384,10 @@ export const SessionDetailPage: React.FC = () => {
     setActionLoading(true);
     try {
       await apiClient.post(`/sessions/${id}/start`);
-      addToast('success', 'Session started');
+      addToast("success", "Sessao iniciada");
       await loadSession();
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to start session');
+      addToast("error", error.message || "Falha ao iniciar sessao");
     } finally {
       setActionLoading(false);
     }
@@ -389,11 +399,11 @@ export const SessionDetailPage: React.FC = () => {
     setActionLoading(true);
     try {
       await apiClient.post(`/sessions/${id}/stop`);
-      addToast('success', 'Session stopped');
+      addToast("success", "Sessao parada");
       stopPolling();
       await loadSession();
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to stop session');
+      addToast("error", error.message || "Falha ao parar sessao");
     } finally {
       setActionLoading(false);
     }
@@ -401,16 +411,16 @@ export const SessionDetailPage: React.FC = () => {
 
   const handleDeleteSession = async () => {
     if (!id) return;
-    const confirmed = window.confirm('Excluir esta sessao e todos os dados dela? Esta acao nao pode ser desfeita.');
+    const confirmed = window.confirm("Excluir esta sessao e todos os dados dela? Esta acao nao pode ser desfeita.");
     if (!confirmed) return;
 
     setActionLoading(true);
     try {
       await apiClient.delete(`/sessions/${id}`);
-      addToast('success', 'Sessao excluida com sucesso');
-      navigate('/sessions');
+      addToast("success", "Sessao excluida com sucesso");
+      navigate("/sessions");
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to delete session');
+      addToast("error", error.message || "Falha ao excluir sessao");
     } finally {
       setActionLoading(false);
     }
@@ -427,7 +437,7 @@ export const SessionDetailPage: React.FC = () => {
   if (!session) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-400">Session not found</p>
+        <p className="text-gray-400">Sessao nao encontrada</p>
       </div>
     );
   }
@@ -435,39 +445,39 @@ export const SessionDetailPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/sessions')} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
+        <button onClick={() => navigate("/sessions")} className="p-2 hover:bg-gray-700 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold text-white">{session.name}</h1>
-          <p className="text-gray-400 mt-1">Session Details</p>
+          <p className="text-gray-400 mt-1">Detalhes da Sessao</p>
         </div>
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-2 inline-flex gap-2">
         <button
-          onClick={() => setActiveTab('details')}
-          className={`px-4 py-2 rounded-md text-sm ${activeTab === 'details' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+          onClick={() => setActiveTab("details")}
+          className={`px-4 py-2 rounded-md text-sm ${activeTab === "details" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
         >
           Detalhes
         </button>
         <button
-          onClick={() => setActiveTab('conversation')}
-          className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${activeTab === 'conversation' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+          onClick={() => setActiveTab("conversation")}
+          className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${activeTab === "conversation" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
         >
           <MessageSquare className="w-4 h-4" />
           Conversa
         </button>
         <button
-          onClick={() => setActiveTab('prompt')}
-          className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${activeTab === 'prompt' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'}`}
+          onClick={() => setActiveTab("prompt")}
+          className={`px-4 py-2 rounded-md text-sm flex items-center gap-2 ${activeTab === "prompt" ? "bg-blue-600 text-white" : "text-gray-300 hover:bg-gray-700"}`}
         >
           <Bot className="w-4 h-4" />
-          Prompt
+          IA
         </button>
       </div>
 
-      {activeTab === 'conversation' && (
+      {activeTab === "conversation" && (
         <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-4">
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-3 space-y-3">
             <input
@@ -478,10 +488,10 @@ export const SessionDetailPage: React.FC = () => {
               className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
             />
             <p className="text-xs text-gray-400">
-              {syncState === 'syncing' && 'Sincronizando conversas automaticamente...'}
-              {syncState === 'done' && 'Sincronizacao automatica concluida.'}
-              {syncState === 'error' && 'Falha na sincronizacao automatica (seguindo com polling/eventos).'}
-              {syncState === 'idle' && 'A sincronizacao inicia automaticamente ao abrir esta aba.'}
+              {syncState === "syncing" && "Sincronizando conversas automaticamente..."}
+              {syncState === "done" && "Sincronizacao automatica concluida."}
+              {syncState === "error" && "Falha na sincronizacao automatica (seguindo com polling/eventos)."}
+              {syncState === "idle" && "A sincronizacao inicia automaticamente ao abrir esta aba."}
             </p>
             {conversationsLoading ? (
               <div className="flex justify-center py-8">
@@ -499,14 +509,14 @@ export const SessionDetailPage: React.FC = () => {
                     }
                     className={`w-full text-left p-3 rounded-lg border ${
                       selectedConversation?.contact === item.contact
-                        ? 'bg-blue-600/30 border-blue-500'
-                        : 'bg-gray-700 border-gray-600 hover:bg-gray-650'
+                        ? "bg-blue-600/30 border-blue-500"
+                        : "bg-gray-700 border-gray-600 hover:bg-gray-650"
                     }`}
                   >
                     <p className="text-sm font-medium text-white truncate">{item.contact}</p>
                     <p className="text-xs text-gray-300 truncate mt-1">{item.lastPreview}</p>
                     <p className="text-[11px] text-gray-400 mt-1">
-                      {new Date(item.lastMessageAt).toLocaleString()} - {item.totalMessages} msgs
+                      {new Date(item.lastMessageAt).toLocaleString()} - {item.totalMessages} mensagens
                     </p>
                   </button>
                 ))}
@@ -546,7 +556,7 @@ export const SessionDetailPage: React.FC = () => {
                       <div
                         key={item.id}
                         className={`max-w-[85%] rounded-lg px-3 py-2 ${
-                          item.direction === 'out' ? 'ml-auto bg-blue-600 text-white' : 'mr-auto bg-gray-700 text-gray-100'
+                          item.direction === "out" ? "ml-auto bg-blue-600 text-white" : "mr-auto bg-gray-700 text-gray-100"
                         }`}
                       >
                         <p className="text-sm break-words">{messageBody(item)}</p>
@@ -566,15 +576,15 @@ export const SessionDetailPage: React.FC = () => {
                   />
                   <button
                     type="submit"
-                    disabled={conversationSendLoading || session.status !== 'ready'}
+                    disabled={conversationSendLoading || session.status !== "ready"}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-white flex items-center gap-2"
                   >
                     {conversationSendLoading ? <Loader size="sm" /> : <SendHorizontal className="w-4 h-4" />}
                     <span>Enviar</span>
                   </button>
                 </form>
-                {session.status !== 'ready' && (
-                  <p className="text-xs text-yellow-400 mt-2">A sessao precisa estar ready para enviar mensagens.</p>
+                {session.status !== "ready" && (
+                  <p className="text-xs text-yellow-400 mt-2">A sessao precisa estar pronta para enviar mensagens.</p>
                 )}
               </>
             )}
@@ -582,7 +592,7 @@ export const SessionDetailPage: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'prompt' && (
+      {activeTab === "prompt" && (
         <div className="bg-gray-800 rounded-lg border border-gray-700 p-6 space-y-4">
           {autoReplyLoading ? (
             <div className="flex items-center justify-center py-12">
@@ -594,7 +604,7 @@ export const SessionDetailPage: React.FC = () => {
                 <div>
                   <h2 className="text-lg font-semibold text-white">Auto-responder</h2>
                   <p className="text-sm text-gray-400">
-                    Quando ativo, toda mensagem recebida na sessao gera resposta automatica (modo mock).
+                    Quando ativo, toda mensagem recebida na sessao gera resposta automatica.
                   </p>
                 </div>
                 <label className="inline-flex items-center gap-2 text-sm text-gray-200">
@@ -610,7 +620,7 @@ export const SessionDetailPage: React.FC = () => {
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Texto/Prompt da resposta</label>
                 <textarea
-                  value={autoReplyConfig.promptText ?? ''}
+                  value={autoReplyConfig.promptText ?? ""}
                   onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, promptText: e.target.value }))}
                   maxLength={10000}
                   rows={6}
@@ -618,7 +628,7 @@ export const SessionDetailPage: React.FC = () => {
                   placeholder="Ex: Responda de forma cordial em portugues, com no maximo 2 frases..."
                 />
                 <p className="mt-1 text-xs text-gray-400">
-                  {(autoReplyConfig.promptText ?? '').length}/10000 caracteres
+                  {(autoReplyConfig.promptText ?? "").length}/10000 caracteres
                 </p>
               </div>
 
@@ -630,20 +640,20 @@ export const SessionDetailPage: React.FC = () => {
                     onChange={(e) =>
                       setAutoReplyConfig((prev) => ({
                         ...prev,
-                        provider: (e.target.value as 'mock' | 'openai') ?? 'mock'
+                        provider: (e.target.value as "mock" | "openai") ?? "mock"
                       }))
                     }
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                   >
-                    <option value="mock">Mock (sem IA real)</option>
-                    <option value="openai">OpenAI (placeholder)</option>
+                    <option value="mock">Sem IA</option>
+                    <option value="openai">OpenAI</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm text-gray-300 mb-2">Modelo da IA</label>
                   <input
                     type="text"
-                    value={autoReplyConfig.aiModel ?? 'gpt-5'}
+                    value={autoReplyConfig.aiModel ?? "gpt-5"}
                     onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, aiModel: e.target.value }))}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                     placeholder="gpt-5"
@@ -653,10 +663,10 @@ export const SessionDetailPage: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-300 mb-2">Token API (opcional por enquanto)</label>
+                  <label className="block text-sm text-gray-300 mb-2">Token API</label>
                   <input
                     type="password"
-                    value={autoReplyConfig.apiToken ?? ''}
+                    value={autoReplyConfig.apiToken ?? ""}
                     onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, apiToken: e.target.value }))}
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
                     placeholder="sk-..."
@@ -666,14 +676,15 @@ export const SessionDetailPage: React.FC = () => {
 
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400">
-                  Ultima atualizacao: {autoReplyConfig.updatedAt ? new Date(autoReplyConfig.updatedAt).toLocaleString() : 'nunca'}
+                  Ultima
+                  atualizacao: {autoReplyConfig.updatedAt ? new Date(autoReplyConfig.updatedAt).toLocaleString() : "nunca"}
                 </p>
                 <button
                   onClick={handleSaveAutoReplyConfig}
                   disabled={autoReplySaving}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-white"
                 >
-                  {autoReplySaving ? 'Salvando...' : 'Salvar Configuracao'}
+                  {autoReplySaving ? "Salvando..." : "Salvar Configuracao"}
                 </button>
               </div>
             </>
@@ -681,11 +692,11 @@ export const SessionDetailPage: React.FC = () => {
         </div>
       )}
 
-      {activeTab === 'details' && (
+      {activeTab === "details" && (
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-              <h2 className="text-lg font-semibold text-white mb-4">Information</h2>
+              <h2 className="text-lg font-semibold text-white mb-4">Informacoes</h2>
               <div className="space-y-4">
                 <div>
                   <span className="text-sm text-gray-400">Status</span>
@@ -694,21 +705,21 @@ export const SessionDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-400">Phone Number</span>
-                  <p className="mt-1 text-white">{session.phoneNumber || 'Not connected'}</p>
+                  <span className="text-sm text-gray-400">Numero de Telefone</span>
+                  <p className="mt-1 text-white">{session.phoneNumber || "Not Conectada"}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-400">Created At</span>
+                  <span className="text-sm text-gray-400">Criada Em</span>
                   <p className="mt-1 text-white">{new Date(session.createdAt).toLocaleString()}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-400">Updated At</span>
+                  <span className="text-sm text-gray-400">Atualizada Em</span>
                   <p className="mt-1 text-white">{new Date(session.updatedAt).toLocaleString()}</p>
                 </div>
               </div>
 
               <div className="mt-6 flex gap-3">
-                {session.status === 'ready' || session.status === 'qr' || session.status === 'starting' ? (
+                {session.status === "ready" || session.status === "qr" || session.status === "starting" ? (
                   <button
                     onClick={handleStopSession}
                     disabled={actionLoading}
@@ -722,7 +733,7 @@ export const SessionDetailPage: React.FC = () => {
                     ) : (
                       <>
                         <Square className="w-4 h-4" />
-                        <span>Stop Session</span>
+                        <span>Parar Sessao</span>
                       </>
                     )}
                   </button>
@@ -735,12 +746,12 @@ export const SessionDetailPage: React.FC = () => {
                     {actionLoading ? (
                       <>
                         <Loader size="sm" />
-                        <span>Starting...</span>
+                        <span>Iniciando\.\.\.</span>
                       </>
                     ) : (
                       <>
                         <Play className="w-4 h-4" />
-                        <span>Start Session</span>
+                        <span>Iniciar Sessao</span>
                       </>
                     )}
                   </button>
@@ -758,38 +769,38 @@ export const SessionDetailPage: React.FC = () => {
 
             <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
               <h2 className="text-lg font-semibold text-white mb-4">QR Code</h2>
-              {session.status === 'qr' && (qrData?.qrString || qrData?.qrBase64) ? (
+              {session.status === "qr" && (qrData?.qrString || qrData?.qrBase64) ? (
                 <div className="flex flex-col items-center">
                   {qrData.qrString && <canvas ref={canvasRef} className="bg-white p-4 rounded-lg" />}
                   {qrData.qrBase64 && !qrData.qrString && (
                     <img src={qrData.qrBase64} alt="QR Code" className="max-w-full h-auto rounded-lg" />
                   )}
-                  <p className="mt-4 text-sm text-gray-400 text-center">Scan this QR code with WhatsApp to connect</p>
+                  <p className="mt-4 text-sm text-gray-400 text-center">Escaneie este QR code com WhatsApp para conectar</p>
                 </div>
-              ) : session.status === 'starting' ? (
+              ) : session.status === "starting" ? (
                 <div className="flex flex-col items-center justify-center py-12">
                   <Loader size="lg" />
-                  <p className="mt-4 text-sm text-gray-400">Starting session...</p>
+                  <p className="mt-4 text-sm text-gray-400">Iniciando sessao\.\.\.</p>
                 </div>
-              ) : session.status === 'ready' ? (
+              ) : session.status === "ready" ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-green-500 font-medium mb-2">Connected</p>
-                  <p className="text-sm text-gray-400">Session is ready to send messages</p>
+                  <p className="text-green-500 font-medium mb-2">Conectada</p>
+                  <p className="text-sm text-gray-400">A sessao esta pronta para enviar mensagens</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-gray-400 mb-2">No QR code available</p>
-                  <p className="text-sm text-gray-500">Start the session to generate QR code</p>
+                  <p className="text-gray-400 mb-2">Nenhum QR code disponivel</p>
+                  <p className="text-sm text-gray-500">Inicie a sessao para gerar QR code</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Recent Events</h2>
+            <h2 className="text-lg font-semibold text-white mb-4">Eventos Recentes</h2>
             <div className="text-sm text-gray-400">
-              <p>Status polling active: Yes ({shouldPoll(session.status) ? 'every 3s' : 'every 10s'})</p>
-              <p className="mt-2">Last status check: {lastStatusCheckAt ? lastStatusCheckAt.toLocaleTimeString() : '-'}</p>
+              <p>Polling de status ativo: Sim ({shouldPoll(session.status) ? "a cada 3s" : "a cada 10s"})</p>
+              <p className="mt-2">Ultima verificacao de status: {lastStatusCheckAt ? lastStatusCheckAt.toLocaleTimeString() : "-"}</p>
             </div>
           </div>
         </>
@@ -797,4 +808,6 @@ export const SessionDetailPage: React.FC = () => {
     </div>
   );
 };
+
+
 

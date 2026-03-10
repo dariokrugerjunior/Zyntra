@@ -10,14 +10,14 @@ import { Loader } from '../components/Loader';
 import { Send, Upload, Copy, CheckCircle2, XCircle, Clock } from 'lucide-react';
 
 const textMessageSchema = z.object({
-  to: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number (E.164 format)'),
-  text: z.string().min(1, 'Message is required'),
+  to: z.string().regex(/^\+?\d{10,15}$/, 'Numero invalido (formato E.164)'),
+  text: z.string().min(1, 'Mensagem obrigatoria'),
 });
 
 const mediaMessageSchema = z.object({
-  to: z.string().regex(/^\+?\d{10,15}$/, 'Invalid phone number (E.164 format)'),
-  base64: z.string().min(1, 'File is required'),
-  mime: z.string().min(1, 'MIME type is required'),
+  to: z.string().regex(/^\+?\d{10,15}$/, 'Numero invalido (formato E.164)'),
+  base64: z.string().min(1, 'Arquivo obrigatorio'),
+  mime: z.string().min(1, 'Tipo MIME obrigatorio'),
   fileName: z.string().optional(),
   caption: z.string().optional(),
 });
@@ -49,7 +49,7 @@ export const MessagesPage: React.FC = () => {
       const response = await apiClient.get('/sessions');
       setSessions(response.data);
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load sessions');
+      addToast('error', error.message || 'Falha ao carregar sessoes');
     }
   };
 
@@ -63,7 +63,7 @@ export const MessagesPage: React.FC = () => {
       const validated = textMessageSchema.parse(textForm);
       
       if (!selectedSessionId) {
-        addToast('error', 'Please select a session');
+        addToast('error', 'Selecione uma sessao');
         return;
       }
 
@@ -99,7 +99,7 @@ export const MessagesPage: React.FC = () => {
         sentAt: new Date().toISOString(),
       });
 
-      addToast('success', 'Message sent successfully');
+      addToast('success', 'Mensagem enviada com sucesso');
       setTextForm({ to: '', text: '' });
       setIdempotencyKey(uuidv4());
     } catch (error: any) {
@@ -113,7 +113,7 @@ export const MessagesPage: React.FC = () => {
         });
         setTextErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to send message');
+        addToast('error', error.message || 'Falha ao enviar mensagem');
       }
     } finally {
       setTextLoading(false);
@@ -126,12 +126,12 @@ export const MessagesPage: React.FC = () => {
 
     try {
       if (!mediaForm.file) {
-        setMediaErrors({ file: 'Please select a file' });
+        setMediaErrors({ file: 'Selecione um arquivo' });
         return;
       }
 
       if (!selectedSessionId) {
-        addToast('error', 'Please select a session');
+        addToast('error', 'Selecione uma sessao');
         return;
       }
 
@@ -154,7 +154,7 @@ export const MessagesPage: React.FC = () => {
         to: validated.to,
         status: 'queued',
         type: 'media',
-        content: validated.fileName || 'media',
+        content: validated.fileName || 'midia',
         sentAt: new Date().toISOString(),
       });
 
@@ -174,11 +174,11 @@ export const MessagesPage: React.FC = () => {
         to: validated.to,
         status: 'sent',
         type: 'media',
-        content: validated.fileName || 'media',
+        content: validated.fileName || 'midia',
         sentAt: new Date().toISOString(),
       });
 
-      addToast('success', 'Media message sent successfully');
+      addToast('success', 'Mensagem de midia enviada com sucesso');
       setMediaForm({ to: '', file: null, caption: '' });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -191,7 +191,7 @@ export const MessagesPage: React.FC = () => {
         });
         setMediaErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to send media');
+        addToast('error', error.message || 'Falha ao enviar midia');
       }
     } finally {
       setMediaLoading(false);
@@ -213,27 +213,27 @@ export const MessagesPage: React.FC = () => {
 
   const copyIdempotencyKey = () => {
     navigator.clipboard.writeText(idempotencyKey);
-    addToast('info', 'Idempotency key copied');
+    addToast('info', 'Chave de idempotencia copiada');
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Messages</h1>
-        <p className="text-gray-400 mt-1">Send text and media messages via WhatsApp</p>
+        <h1 className="text-2xl font-bold text-white">Mensagens</h1>
+        <p className="text-gray-400 mt-1">Envie mensagens de texto e midia via WhatsApp</p>
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            Select Session
+            Selecione a Sessao
           </label>
           <select
             value={selectedSessionId}
             onChange={(e) => setSelectedSessionId(e.target.value)}
             className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">Choose a session...</option>
+            <option value="">Escolha uma sessao...</option>
             {readySessionsOnly.map((session) => (
               <option key={session.id} value={session.id}>
                 {session.name} {session.phoneNumber ? `(${session.phoneNumber})` : ''}
@@ -242,18 +242,18 @@ export const MessagesPage: React.FC = () => {
           </select>
           {readySessionsOnly.length === 0 && (
             <p className="mt-2 text-sm text-yellow-400">
-              No ready sessions available. Please start a session first.
+              Nenhuma sessao pronta disponivel. Inicie uma sessao primeiro.
             </p>
           )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Send Text Message</h3>
+            <h3 className="text-lg font-semibold text-white">Enviar Mensagem de Texto</h3>
             <form onSubmit={handleSendText} className="space-y-4">
               <div>
                 <label htmlFor="text-to" className="block text-sm font-medium text-gray-300 mb-2">
-                  To (E.164 format)
+                  Para (formato E.164)
                 </label>
                 <input
                   type="text"
@@ -268,7 +268,7 @@ export const MessagesPage: React.FC = () => {
 
               <div>
                 <label htmlFor="text-message" className="block text-sm font-medium text-gray-300 mb-2">
-                  Message
+                  Mensagem
                 </label>
                 <textarea
                   id="text-message"
@@ -276,13 +276,13 @@ export const MessagesPage: React.FC = () => {
                   onChange={(e) => setTextForm({ ...textForm, text: e.target.value })}
                   rows={4}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Type your message..."
+                  placeholder="Digite sua mensagem..."
                 />
                 {textErrors.text && <p className="mt-1 text-sm text-red-400">{textErrors.text}</p>}
               </div>
 
               <div className="flex items-center gap-2 text-xs text-gray-400">
-                <span>Idempotency Key:</span>
+                <span>Chave de Idempotencia:</span>
                 <code className="bg-gray-700 px-2 py-1 rounded">{idempotencyKey.slice(0, 8)}...</code>
                 <button
                   type="button"
@@ -301,12 +301,12 @@ export const MessagesPage: React.FC = () => {
                 {textLoading ? (
                   <>
                     <Loader size="sm" />
-                    <span>Sending...</span>
+                    <span>Enviando...</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    <span>Send Text</span>
+                    <span>Enviar Texto</span>
                   </>
                 )}
               </button>
@@ -314,11 +314,11 @@ export const MessagesPage: React.FC = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white">Send Media Message</h3>
+            <h3 className="text-lg font-semibold text-white">Enviar Mensagem de Midia</h3>
             <form onSubmit={handleSendMedia} className="space-y-4">
               <div>
                 <label htmlFor="media-to" className="block text-sm font-medium text-gray-300 mb-2">
-                  To (E.164 format)
+                  Para (formato E.164)
                 </label>
                 <input
                   type="text"
@@ -333,7 +333,7 @@ export const MessagesPage: React.FC = () => {
 
               <div>
                 <label htmlFor="media-file" className="block text-sm font-medium text-gray-300 mb-2">
-                  File
+                  Arquivo
                 </label>
                 <input
                   type="file"
@@ -353,7 +353,7 @@ export const MessagesPage: React.FC = () => {
 
               <div>
                 <label htmlFor="media-caption" className="block text-sm font-medium text-gray-300 mb-2">
-                  Caption (optional)
+                  Legenda (opcional)
                 </label>
                 <input
                   type="text"
@@ -361,7 +361,7 @@ export const MessagesPage: React.FC = () => {
                   value={mediaForm.caption}
                   onChange={(e) => setMediaForm({ ...mediaForm, caption: e.target.value })}
                   className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Optional caption..."
+                  placeholder="Legenda opcional..."
                 />
               </div>
 
@@ -373,12 +373,12 @@ export const MessagesPage: React.FC = () => {
                 {mediaLoading ? (
                   <>
                     <Loader size="sm" />
-                    <span>Sending...</span>
+                    <span>Enviando...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4" />
-                    <span>Send Media</span>
+                    <span>Enviar Midia</span>
                   </>
                 )}
               </button>
@@ -388,9 +388,9 @@ export const MessagesPage: React.FC = () => {
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Message History</h3>
+        <h3 className="text-lg font-semibold text-white mb-4">Historico de Mensagens</h3>
         {messages.length === 0 ? (
-          <p className="text-gray-400 text-center py-8">No messages sent yet</p>
+          <p className="text-gray-400 text-center py-8">Nenhuma mensagem enviada ainda</p>
         ) : (
           <div className="space-y-3">
             {messages.map((message) => (
@@ -406,14 +406,14 @@ export const MessagesPage: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-white">To: {message.to}</span>
+                    <span className="text-sm font-medium text-white">Para: {message.to}</span>
                     <span className="text-xs text-gray-400">
                       ({message.type})
                     </span>
                   </div>
                   <p className="text-sm text-gray-300 truncate">{message.content}</p>
                   {message.jobId && (
-                    <p className="text-xs text-gray-500 mt-1">Job ID: {message.jobId}</p>
+                    <p className="text-xs text-gray-500 mt-1">ID do Job: {message.jobId}</p>
                   )}
                 </div>
                 <div className="text-xs text-gray-400">

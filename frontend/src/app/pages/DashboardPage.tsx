@@ -11,7 +11,7 @@ import { Modal } from '../components/Modal';
 import { StatusBadge } from '../components/StatusBadge';
 
 const createSessionSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'Nome obrigatorio'),
 });
 
 export const DashboardPage: React.FC = () => {
@@ -46,7 +46,7 @@ export const DashboardPage: React.FC = () => {
       const response = await apiClient.get<Session[]>('/sessions');
       setSessions(response.data);
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load sessions');
+      addToast('error', error.message || 'Falha ao carregar sessoes');
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const DashboardPage: React.FC = () => {
 
       const response = await apiClient.post<Session>('/sessions', validated);
       setSessions([response.data, ...sessions]);
-      addToast('success', 'Session created successfully');
+      addToast('success', 'Sessao criada com sucesso');
       setShowCreateModal(false);
       setNewSessionName('');
     } catch (error: any) {
@@ -76,7 +76,7 @@ export const DashboardPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to create session');
+        addToast('error', error.message || 'Falha ao criar sessao');
       }
     } finally {
       setCreating(false);
@@ -89,22 +89,22 @@ export const DashboardPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-gray-400 mt-1">Overview of your WhatsApp sessions</p>
+          <h1 className="text-2xl font-bold text-white">Painel</h1>
+          <p className="text-gray-400 mt-1">Visao geral das suas sessoes de WhatsApp</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Create Session</span>
+          <span>Criar Sessao</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-400">Total Sessions</h3>
+            <h3 className="text-sm font-medium text-gray-400">Total de Sessoes</h3>
             <Smartphone className="w-5 h-5 text-blue-500" />
           </div>
           <p className="text-3xl font-bold text-white">{stats.total}</p>
@@ -112,7 +112,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-400">Ready</h3>
+            <h3 className="text-sm font-medium text-gray-400">Prontas</h3>
             <Activity className="w-5 h-5 text-green-500" />
           </div>
           <p className="text-3xl font-bold text-white">{stats.ready}</p>
@@ -128,7 +128,7 @@ export const DashboardPage: React.FC = () => {
 
         <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-400">Disconnected</h3>
+            <h3 className="text-sm font-medium text-gray-400">Desconectadas</h3>
             <AlertCircle className="w-5 h-5 text-orange-500" />
           </div>
           <p className="text-3xl font-bold text-white">{stats.disconnected}</p>
@@ -137,7 +137,7 @@ export const DashboardPage: React.FC = () => {
 
       <div className="bg-gray-800 rounded-lg border border-gray-700">
         <div className="p-6 border-b border-gray-700">
-          <h2 className="text-lg font-semibold text-white">Recent Sessions</h2>
+          <h2 className="text-lg font-semibold text-white">Sessoes Recentes</h2>
         </div>
         <div className="p-6">
           {loading ? (
@@ -146,7 +146,7 @@ export const DashboardPage: React.FC = () => {
             </div>
           ) : recentSessions.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400">No sessions yet</p>
+              <p className="text-gray-400">Nenhuma sessao ainda</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -178,7 +178,7 @@ export const DashboardPage: React.FC = () => {
                 to="/sessions"
                 className="text-blue-500 hover:text-blue-400 text-sm font-medium"
               >
-                View all sessions
+                Ver todas as sessoes
               </Link>
             </div>
           )}
@@ -188,12 +188,12 @@ export const DashboardPage: React.FC = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New Session"
+        title="Criar Nova Sessao"
       >
         <form onSubmit={handleCreateSession} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-              Session Name
+              Nome da Sessao
             </label>
             <input
               type="text"
@@ -201,7 +201,7 @@ export const DashboardPage: React.FC = () => {
               value={newSessionName}
               onChange={(e) => setNewSessionName(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Customer Support"
+              placeholder="Ex: Suporte ao Cliente"
             />
             {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
           </div>
@@ -212,7 +212,7 @@ export const DashboardPage: React.FC = () => {
               onClick={() => setShowCreateModal(false)}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -222,10 +222,10 @@ export const DashboardPage: React.FC = () => {
               {creating ? (
                 <>
                   <Loader size="sm" />
-                  <span>Creating...</span>
+                  <span>Criando...</span>
                 </>
               ) : (
-                <span>Create</span>
+                <span>Criar</span>
               )}
             </button>
           </div>

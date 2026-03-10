@@ -11,7 +11,7 @@ import { TableSkeleton } from '../components/TableSkeleton';
 import { Plus, Trash2, Key as KeyIcon, Copy, Eye, EyeOff } from 'lucide-react';
 
 const createApiKeySchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().min(1, 'Nome obrigatorio'),
 });
 
 export const ApiKeysPage: React.FC = () => {
@@ -37,7 +37,7 @@ export const ApiKeysPage: React.FC = () => {
       const response = await apiClient.get<ApiKey[]>('/api-keys');
       setApiKeys(response.data);
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to load API keys');
+      addToast('error', error.message || 'Falha ao carregar chaves de API');
     } finally {
       setLoading(false);
     }
@@ -54,7 +54,7 @@ export const ApiKeysPage: React.FC = () => {
       const response = await apiClient.post<ApiKeyCreated>('/api-keys', validated);
       setNewKeyData(response.data);
       setApiKeys([{ id: response.data.id, name: response.data.name, createdAt: response.data.createdAt }, ...apiKeys]);
-      addToast('success', 'API key created successfully');
+      addToast('success', 'Chave de API criada com sucesso');
       setShowCreateModal(false);
       setShowKeyModal(true);
       setKeyName('');
@@ -69,7 +69,7 @@ export const ApiKeysPage: React.FC = () => {
         });
         setErrors(fieldErrors);
       } else {
-        addToast('error', error.message || 'Failed to create API key');
+        addToast('error', error.message || 'Falha ao criar chave de API');
       }
     } finally {
       setCreating(false);
@@ -77,7 +77,7 @@ export const ApiKeysPage: React.FC = () => {
   };
 
   const handleRevokeApiKey = async (id: string) => {
-    if (!confirm('Are you sure you want to revoke this API key? This action cannot be undone.')) {
+    if (!confirm('Tem certeza que deseja revogar esta chave de API? Esta acao nao pode ser desfeita.')) {
       return;
     }
 
@@ -85,9 +85,9 @@ export const ApiKeysPage: React.FC = () => {
     try {
       await apiClient.delete(`/api-keys/${id}`);
       removeApiKey(id);
-      addToast('success', 'API key revoked successfully');
+      addToast('success', 'Chave de API revogada com sucesso');
     } catch (error: any) {
-      addToast('error', error.message || 'Failed to revoke API key');
+      addToast('error', error.message || 'Falha ao revogar chave de API');
     } finally {
       setActionLoading(null);
     }
@@ -95,7 +95,7 @@ export const ApiKeysPage: React.FC = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    addToast('info', 'Copied to clipboard');
+    addToast('info', 'Copiado para a area de transferencia');
   };
 
   const closeKeyModal = () => {
@@ -108,15 +108,15 @@ export const ApiKeysPage: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">API Keys</h1>
-          <p className="text-gray-400 mt-1">Manage API keys for authentication</p>
+          <h1 className="text-2xl font-bold text-white">Chaves de API</h1>
+          <p className="text-gray-400 mt-1">Gerencie as chaves de API para autenticacao</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Create API Key</span>
+          <span>Criar Chave de API</span>
         </button>
       </div>
 
@@ -127,15 +127,15 @@ export const ApiKeysPage: React.FC = () => {
           </div>
         ) : apiKeys.length === 0 ? (
           <EmptyState
-            title="No API keys yet"
-            description="Create an API key to authenticate API requests"
+            title="Nenhuma chave de API ainda"
+            description="Crie uma chave de API para autenticar requisicoes"
             icon={<KeyIcon className="w-12 h-12" />}
             action={
               <button
                 onClick={() => setShowCreateModal(true)}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
-                Create API Key
+                Criar Chave de API
               </button>
             }
           />
@@ -145,19 +145,19 @@ export const ApiKeysPage: React.FC = () => {
               <thead className="bg-gray-900">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Name
+                    Nome
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Created At
+                    Criada Em
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Revoked At
+                    Revogada Em
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
-                    Actions
+                    Acoes
                   </th>
                 </tr>
               </thead>
@@ -175,7 +175,7 @@ export const ApiKeysPage: React.FC = () => {
                             : 'bg-green-600 text-green-200'
                         }`}
                       >
-                        {key.revokedAt ? 'Revoked' : 'Active'}
+                        {key.revokedAt ? 'Revogada' : 'Ativa'}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-gray-300">
@@ -190,7 +190,7 @@ export const ApiKeysPage: React.FC = () => {
                           onClick={() => handleRevokeApiKey(key.id)}
                           disabled={actionLoading === key.id}
                           className="p-2 text-red-400 hover:text-red-300 hover:bg-gray-600 rounded transition-colors disabled:opacity-50"
-                          title="Revoke"
+                          title="Revogar"
                         >
                           {actionLoading === key.id ? (
                             <Loader size="sm" />
@@ -211,12 +211,12 @@ export const ApiKeysPage: React.FC = () => {
       <Modal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create API Key"
+        title="Criar Chave de API"
       >
         <form onSubmit={handleCreateApiKey} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-              API Key Name
+              Nome da Chave de API
             </label>
             <input
               type="text"
@@ -224,7 +224,7 @@ export const ApiKeysPage: React.FC = () => {
               value={keyName}
               onChange={(e) => setKeyName(e.target.value)}
               className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="e.g., Production API Key"
+              placeholder="Ex: Chave de Producao"
             />
             {errors.name && <p className="mt-1 text-sm text-red-400">{errors.name}</p>}
           </div>
@@ -235,7 +235,7 @@ export const ApiKeysPage: React.FC = () => {
               onClick={() => setShowCreateModal(false)}
               className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
             >
-              Cancel
+              Cancelar
             </button>
             <button
               type="submit"
@@ -245,27 +245,27 @@ export const ApiKeysPage: React.FC = () => {
               {creating ? (
                 <>
                   <Loader size="sm" />
-                  <span>Creating...</span>
+                  <span>Criando...</span>
                 </>
               ) : (
-                <span>Create</span>
+                <span>Criar</span>
               )}
             </button>
           </div>
         </form>
       </Modal>
 
-      <Modal isOpen={showKeyModal} onClose={closeKeyModal} title="API Key Created">
+      <Modal isOpen={showKeyModal} onClose={closeKeyModal} title="Chave de API Criada">
         {newKeyData && (
           <div className="space-y-4">
             <div className="bg-yellow-900 border border-yellow-700 rounded-lg p-4">
               <p className="text-yellow-200 text-sm font-medium">
-                Important: Save this API key now. You will not be able to see it again.
+                Importante: salve esta chave agora. Voce nao podera visualiza-la novamente.
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Name</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
               <div className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
                 {newKeyData.name}
               </div>
@@ -284,7 +284,7 @@ export const ApiKeysPage: React.FC = () => {
                     type="button"
                     onClick={() => setShowPlaintext(!showPlaintext)}
                     className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-600 rounded transition-colors"
-                    title={showPlaintext ? 'Hide' : 'Show'}
+                    title={showPlaintext ? 'Ocultar' : 'Mostrar'}
                   >
                     {showPlaintext ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -292,7 +292,7 @@ export const ApiKeysPage: React.FC = () => {
                     type="button"
                     onClick={() => copyToClipboard(newKeyData.apiKey)}
                     className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-600 rounded transition-colors"
-                    title="Copy"
+                    title="Copiar"
                   >
                     <Copy className="w-4 h-4" />
                   </button>
@@ -305,7 +305,7 @@ export const ApiKeysPage: React.FC = () => {
                 onClick={closeKeyModal}
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
               >
-                Done
+                Concluir
               </button>
             </div>
           </div>

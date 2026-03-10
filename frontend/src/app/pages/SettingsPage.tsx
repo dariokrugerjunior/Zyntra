@@ -12,26 +12,26 @@ export const SettingsPage: React.FC = () => {
   const handleClearLocalData = () => {
     if (
       !confirm(
-        'Are you sure you want to clear all local data? You will be logged out and all local settings will be reset.'
+        'Tem certeza que deseja limpar todos os dados locais? Voce sera desconectado e todas as configuracoes locais serao resetadas.'
       )
     ) {
       return;
     }
 
     localStorage.clear();
-    addToast('success', 'Local data cleared');
+    addToast('success', 'Dados locais limpos');
     window.location.href = '/login';
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
-        <p className="text-gray-400 mt-1">Manage your application preferences</p>
+        <h1 className="text-2xl font-bold text-white">Configuracoes</h1>
+        <p className="text-gray-400 mt-1">Gerencie as preferencias da aplicacao</p>
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">API Configuration</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">Configuracao da API</h2>
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Base URL</label>
@@ -39,13 +39,13 @@ export const SettingsPage: React.FC = () => {
               {baseURL}
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Configure via VITE_API_BASE_URL environment variable
+              Configure via variavel de ambiente VITE_API_BASE_URL
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              Authentication Mode
+              Modo de Autenticacao
             </label>
             <div className="flex items-center gap-2 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
               {mode === 'api-key' ? (
@@ -65,13 +65,13 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Appearance</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">Aparencia</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-white">Dark Mode</h3>
+              <h3 className="text-sm font-medium text-white">Modo Escuro</h3>
               <p className="text-xs text-gray-400 mt-1">
-                Toggle between light and dark theme
+                Alterna entre tema claro e escuro
               </p>
             </div>
             <button
@@ -99,13 +99,13 @@ export const SettingsPage: React.FC = () => {
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Data Management</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">Gerenciamento de Dados</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-medium text-white">Clear Local Data</h3>
+              <h3 className="text-sm font-medium text-white">Limpar Dados Locais</h3>
               <p className="text-xs text-gray-400 mt-1">
-                Remove all locally stored data including authentication credentials
+                Remove todos os dados armazenados localmente, incluindo credenciais de autenticacao
               </p>
             </div>
             <button
@@ -113,23 +113,23 @@ export const SettingsPage: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
             >
               <Trash2 className="w-4 h-4" />
-              <span>Clear Data</span>
+              <span>Limpar Dados</span>
             </button>
           </div>
         </div>
       </div>
 
       <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">About</h2>
+        <h2 className="text-lg font-semibold text-white mb-4">Sobre</h2>
         <div className="space-y-2 text-sm">
           <p className="text-gray-300">
-            <span className="font-medium">Version:</span> 1.0.0
+            <span className="font-medium">Versao:</span> 1.0.0
           </p>
           <p className="text-gray-300">
-            <span className="font-medium">Build:</span> {new Date().toLocaleDateString()}
+            <span className="font-medium">Compilacao:</span> {new Date().toLocaleDateString()}
           </p>
           <p className="text-gray-300">
-            <span className="font-medium">Platform:</span> Zyntra SaaS
+            <span className="font-medium">Plataforma:</span> Zyntra SaaS
           </p>
         </div>
       </div>

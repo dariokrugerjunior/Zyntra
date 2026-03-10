@@ -40,8 +40,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     const message = error.response?.data
-      ? (error.response.data as any).message || (error.response.data as any).error || 'Request failed'
-      : error.message || 'Network error';
+      ? (error.response.data as any).message || (error.response.data as any).error || 'Falha na requisicao'
+      : error.message || 'Erro de rede';
 
     return Promise.reject({
       status: error.response?.status,
