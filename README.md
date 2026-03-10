@@ -21,6 +21,7 @@ docker compose up -d --build
   - `.env.local` quando `NODE_ENV` for diferente de `production`
   - `.env.production` quando `NODE_ENV=production`
   - fallback para `.env` se os arquivos acima não existirem
+- Convenção do monorepo: manter os arquivos `.env*` na raiz do projeto.
 
 ## Seed (company + api key)
 O seed cria/atualiza 1 company (`Demo Company`) e 1 API key de login fixa (`SEED_API_KEY` no `.env.local`/`.env`), no padrão `zyn_...`:

@@ -12,7 +12,8 @@ const envFileCandidates = [
 const envDirCandidates = [
   process.cwd(),
   resolve(__dirname, "../.."),
-  resolve(__dirname, "../../..")
+  resolve(__dirname, "../../.."),
+  resolve(__dirname, "../../../..")
 ];
 
 let loaded = false;

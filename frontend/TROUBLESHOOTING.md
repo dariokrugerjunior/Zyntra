@@ -14,7 +14,7 @@
   npm install
   ```
 - Check for port conflicts (default: 5173)
-- Verify `.env` file exists and is properly formatted
+- Verify `.env.local` file exists and is properly formatted
 
 ### 2. Authentication Issues
 
@@ -25,7 +25,7 @@
 - Wrong API base URL
 
 **Solutions:**
-1. Check backend is running at the URL in `.env`
+1. Check backend is running at the URL in `.env.local`
 2. Test backend health: `curl http://localhost:3000/health`
 3. Verify your credentials are valid
 4. Check browser console for detailed error messages
@@ -262,7 +262,7 @@
 
 ### Enable Detailed Logging
 
-Add this to your `.env`:
+Add this to your `.env.local`:
 ```env
 VITE_DEBUG=true
 ```
@@ -323,9 +323,9 @@ rm -rf node_modules package-lock.json
 npm install
 
 # Reset environment
-rm .env
-cp .env.example .env
-# Edit .env with correct values
+rm .env.local
+cp .env.example .env.local
+# Edit .env.local with correct values
 
 # Restart development server
 npm run dev

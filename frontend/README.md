@@ -40,13 +40,13 @@ Multi-tenant SaaS platform for managing WhatsApp sessions and message sending. B
 npm install
 ```
 
-3. Create `.env` file from example:
+3. Create `.env.local` file from example:
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-4. Configure environment variables in `.env`:
+4. Configure environment variables in `.env.local`:
 
 ```env
 VITE_API_BASE_URL=http://localhost:3000
