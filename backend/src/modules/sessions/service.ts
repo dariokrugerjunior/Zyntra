@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
+import axios from "axios";
 import { prisma } from "../../infra/db/prisma";
 import { sessionPurgeQueue, sessionStartQueue, sessionStopQueue } from "../../infra/queue/bullmq";
 import { redis } from "../../infra/redis/redis";
@@ -34,6 +35,22 @@ const upsertAutoReplySchema = z
     }
   });
 
+const testAutoReplyConnectionSchema = z
+  .object({
+    provider: z.enum(["mock", "openai"]).default("mock"),
+    aiModel: z.string().max(120).optional(),
+    apiToken: z.string().max(2048).optional()
+  })
+  .superRefine((value, ctx) => {
+    if (value.provider === "openai" && !value.apiToken?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["apiToken"],
+        message: "api_token_required_for_openai"
+      });
+    }
+  });
+
 type AutoReplyConfigRow = {
   enabled: boolean;
   promptText: string | null;
@@ -42,6 +59,60 @@ type AutoReplyConfigRow = {
   apiToken: string | null;
   updatedAt: Date;
 };
+
+type OpenAIModel = {
+  id: string;
+};
+
+type OpenAIModelsResponse = {
+  data: OpenAIModel[];
+};
+
+async function validateOpenAIConfig(apiToken: string, aiModel: string) {
+  try {
+    const response = await axios.get<OpenAIModelsResponse>("https://api.openai.com/v1/models", {
+      headers: {
+        Authorization: `Bearer ${apiToken}`
+      },
+      timeout: 10000
+    });
+
+    const availableModels = (response.data.data ?? [])
+      .map((item) => item.id)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+
+    const exists = availableModels.includes(aiModel);
+    if (!exists) {
+      throw new HttpError(400, "modelo_openai_nao_encontrado", {
+        availableModels
+      });
+    }
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
+    throw new HttpError(401, "token_openai_invalido");
+  }
+}
+
+export async function testSessionAutoReplyConnection(companyId: string, sessionId: string, body: unknown) {
+  await getSessionById(companyId, sessionId);
+  const data = testAutoReplyConnectionSchema.parse(body);
+
+  if (data.provider === "mock") {
+    return { ok: true, message: "sem_ia_nao_requer_teste" };
+  }
+
+  const aiModel = data.aiModel?.trim() || "gpt-5";
+  const apiToken = data.apiToken?.trim();
+  if (!apiToken) {
+    throw new HttpError(400, "api_token_required_for_openai");
+  }
+
+  await validateOpenAIConfig(apiToken, aiModel);
+  return { ok: true, message: "conexao_openai_ok" };
+}
 
 export async function createSession(companyId: string, body: unknown) {
   const data = createSessionSchema.parse(body);
@@ -191,6 +262,13 @@ export async function upsertSessionAutoReplyConfig(companyId: string, sessionId:
   const promptText = data.promptText?.trim() ?? null;
   const aiModel = data.provider === "mock" ? "" : data.aiModel?.trim() || "gpt-5";
   const apiToken = data.provider === "mock" ? "" : data.apiToken?.trim() ?? null;
+
+  if (data.provider === "openai") {
+    if (!apiToken) {
+      throw new HttpError(400, "api_token_required_for_openai");
+    }
+    await validateOpenAIConfig(apiToken, aiModel);
+  }
 
   await prisma.$executeRaw`
     INSERT INTO "SessionAutoReplyConfig"

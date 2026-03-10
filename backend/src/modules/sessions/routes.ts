@@ -8,6 +8,7 @@ import {
   listSessions,
   startSession,
   stopSession,
+  testSessionAutoReplyConnection,
   syncSessionHistory,
   upsertSessionAutoReplyConfig
 } from "./service";
@@ -76,4 +77,10 @@ sessionsRouter.put("/sessions/:id/auto-reply", async (req, res) => {
   const id = z.string().uuid().parse(req.params.id);
   const config = await upsertSessionAutoReplyConfig(req.context!.companyId, id, req.body);
   return res.status(200).json(config);
+});
+
+sessionsRouter.post("/sessions/:id/auto-reply/test-connection", async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const result = await testSessionAutoReplyConnection(req.context!.companyId, id, req.body);
+  return res.status(200).json(result);
 });

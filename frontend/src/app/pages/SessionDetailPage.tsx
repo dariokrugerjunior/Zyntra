@@ -48,6 +48,9 @@ export const SessionDetailPage: React.FC = () => {
   });
   const [autoReplyLoading, setAutoReplyLoading] = useState(false);
   const [autoReplySaving, setAutoReplySaving] = useState(false);
+  const [autoReplyTesting, setAutoReplyTesting] = useState(false);
+  const [autoReplyTestStatus, setAutoReplyTestStatus] = useState<"idle" | "success" | "error">("idle");
+  const [autoReplyTestMessage, setAutoReplyTestMessage] = useState("");
   const [lastStatusCheckAt, setLastStatusCheckAt] = useState<Date | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -106,6 +109,11 @@ export const SessionDetailPage: React.FC = () => {
     if (!id || activeTab !== "prompt") return;
     loadAutoReplyConfig();
   }, [id, activeTab]);
+
+  useEffect(() => {
+    setAutoReplyTestStatus("idle");
+    setAutoReplyTestMessage("");
+  }, [autoReplyConfig.provider, autoReplyConfig.aiModel, autoReplyConfig.apiToken]);
 
   const shouldPoll = (status: SessionStatus) => status === "starting" || status === "qr";
 
@@ -265,6 +273,10 @@ export const SessionDetailPage: React.FC = () => {
       addToast("error", "Informe o texto de resposta quando auto-responder estiver ativo");
       return;
     }
+    if (autoReplyConfig.provider === "openai" && autoReplyTestStatus !== "success") {
+      addToast("error", "Teste a conexao com a OpenAI antes de salvar.");
+      return;
+    }
 
     setAutoReplySaving(true);
     try {
@@ -286,9 +298,71 @@ export const SessionDetailPage: React.FC = () => {
       });
       addToast("success", "Configuracao de auto-resposta salva");
     } catch (error: any) {
-      addToast("error", error.message || "Falha ao salvar auto-resposta");
+      const backendError = error?.originalError?.response?.data ?? {};
+      const errorCode = String(backendError?.error ?? error?.message ?? "");
+      const availableModels = Array.isArray(backendError?.details?.availableModels)
+        ? (backendError.details.availableModels as string[])
+        : [];
+
+      if (errorCode === "token_openai_invalido") {
+        addToast("error", "Token da OpenAI invalido.");
+      } else if (errorCode === "modelo_openai_nao_encontrado") {
+        if (availableModels.length > 0) {
+          addToast("error", `Modelo nao encontrado. Modelos disponiveis: ${availableModels.join(", ")}`);
+        } else {
+          addToast("error", "Modelo nao encontrado na OpenAI.");
+        }
+      } else {
+        addToast("error", error.message || "Falha ao salvar auto-resposta");
+      }
     } finally {
       setAutoReplySaving(false);
+    }
+  };
+
+  const handleTestAutoReplyConnection = async () => {
+    if (!id) return;
+
+    if (autoReplyConfig.provider !== "openai") {
+      setAutoReplyTestStatus("success");
+      setAutoReplyTestMessage("Sem IA nao requer teste.");
+      return;
+    }
+
+    setAutoReplyTesting(true);
+    setAutoReplyTestStatus("idle");
+    setAutoReplyTestMessage("");
+    try {
+      await apiClient.post(`/sessions/${id}/auto-reply/test-connection`, {
+        provider: autoReplyConfig.provider,
+        aiModel: autoReplyConfig.aiModel ?? "gpt-5",
+        apiToken: autoReplyConfig.apiToken ?? ""
+      });
+      setAutoReplyTestStatus("success");
+      setAutoReplyTestMessage("Conexao com OpenAI validada com sucesso.");
+      addToast("success", "Conexao com OpenAI validada.");
+    } catch (error: any) {
+      const backendError = error?.originalError?.response?.data ?? {};
+      const errorCode = String(backendError?.error ?? error?.message ?? "");
+      const availableModels = Array.isArray(backendError?.details?.availableModels)
+        ? (backendError.details.availableModels as string[])
+        : [];
+
+      let message = error.message || "Falha ao testar conexao";
+      if (errorCode === "token_openai_invalido") {
+        message = "Token da OpenAI invalido.";
+      } else if (errorCode === "modelo_openai_nao_encontrado") {
+        message =
+          availableModels.length > 0
+            ? `Modelo nao encontrado. Modelos disponiveis: ${availableModels.join(", ")}`
+            : "Modelo nao encontrado na OpenAI.";
+      }
+
+      setAutoReplyTestStatus("error");
+      setAutoReplyTestMessage(message);
+      addToast("error", message);
+    } finally {
+      setAutoReplyTesting(false);
     }
   };
 
@@ -677,6 +751,30 @@ export const SessionDetailPage: React.FC = () => {
                 </div>
               )}
 
+              {autoReplyConfig.provider === "openai" && (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleTestAutoReplyConnection}
+                    disabled={autoReplyTesting}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 rounded-lg text-white"
+                  >
+                    {autoReplyTesting ? "Testando..." : "Testar Conexao"}
+                  </button>
+                  {autoReplyTestStatus === "success" && (
+                    <p className="text-xs text-emerald-400">{autoReplyTestMessage}</p>
+                  )}
+                  {autoReplyTestStatus === "error" && (
+                    <p className="text-xs text-red-400">{autoReplyTestMessage}</p>
+                  )}
+                  {autoReplyTestStatus === "idle" && (
+                    <p className="text-xs text-gray-400">
+                      Teste a conexao para habilitar o salvamento das configuracoes de IA.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400">
                   Ultima
@@ -684,7 +782,7 @@ export const SessionDetailPage: React.FC = () => {
                 </p>
                 <button
                   onClick={handleSaveAutoReplyConfig}
-                  disabled={autoReplySaving}
+                  disabled={autoReplySaving || (autoReplyConfig.provider === "openai" && autoReplyTestStatus !== "success")}
                   className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded-lg text-white"
                 >
                   {autoReplySaving ? "Salvando..." : "Salvar Configuracao"}
