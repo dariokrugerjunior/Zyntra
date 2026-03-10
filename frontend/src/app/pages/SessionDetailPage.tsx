@@ -268,12 +268,13 @@ export const SessionDetailPage: React.FC = () => {
 
     setAutoReplySaving(true);
     try {
+      const isMockProvider = autoReplyConfig.provider === "mock";
       const response = await apiClient.put<SessionAutoReplyConfig>(`/sessions/${id}/auto-reply`, {
         enabled: autoReplyConfig.enabled,
         promptText: autoReplyConfig.promptText ?? "",
         provider: autoReplyConfig.provider,
-        aiModel: autoReplyConfig.aiModel ?? "gpt-5",
-        apiToken: autoReplyConfig.apiToken ?? ""
+        aiModel: isMockProvider ? "" : autoReplyConfig.aiModel ?? "gpt-5",
+        apiToken: isMockProvider ? "" : autoReplyConfig.apiToken ?? ""
       });
       setAutoReplyConfig({
         enabled: response.data.enabled,
@@ -649,30 +650,32 @@ export const SessionDetailPage: React.FC = () => {
                     <option value="openai">OpenAI</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">Modelo da IA</label>
-                  <input
-                    type="text"
-                    value={autoReplyConfig.aiModel ?? "gpt-5"}
-                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, aiModel: e.target.value }))}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                    placeholder="gpt-5"
-                  />
-                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-300 mb-2">Token API</label>
-                  <input
-                    type="password"
-                    value={autoReplyConfig.apiToken ?? ""}
-                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, apiToken: e.target.value }))}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
-                    placeholder="sk-..."
-                  />
+              {autoReplyConfig.provider === "openai" && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Modelo da IA</label>
+                    <input
+                      type="text"
+                      value={autoReplyConfig.aiModel ?? "gpt-5"}
+                      onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, aiModel: e.target.value }))}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      placeholder="gpt-5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-300 mb-2">Token API</label>
+                    <input
+                      type="password"
+                      value={autoReplyConfig.apiToken ?? ""}
+                      onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, apiToken: e.target.value }))}
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      placeholder="sk-..."
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="flex items-center justify-between">
                 <p className="text-xs text-gray-400">
@@ -706,7 +709,7 @@ export const SessionDetailPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-sm text-gray-400">Numero de Telefone</span>
-                  <p className="mt-1 text-white">{session.phoneNumber || "Not Conectada"}</p>
+                  <p className="mt-1 text-white">{session.phoneNumber || "Nao conectada"}</p>
                 </div>
                 <div>
                   <span className="text-sm text-gray-400">Criada Em</span>

@@ -189,8 +189,8 @@ export async function upsertSessionAutoReplyConfig(companyId: string, sessionId:
   await getSessionById(companyId, sessionId);
   const data = upsertAutoReplySchema.parse(body);
   const promptText = data.promptText?.trim() ?? null;
-  const aiModel = data.aiModel?.trim() || "gpt-5";
-  const apiToken = data.apiToken?.trim() ?? null;
+  const aiModel = data.provider === "mock" ? "" : data.aiModel?.trim() || "gpt-5";
+  const apiToken = data.provider === "mock" ? "" : data.apiToken?.trim() ?? null;
 
   await prisma.$executeRaw`
     INSERT INTO "SessionAutoReplyConfig"
