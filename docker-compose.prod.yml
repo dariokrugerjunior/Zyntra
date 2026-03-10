@@ -40,7 +40,7 @@ services:
       REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
       DATABASE_URL: postgresql://zyntra:KFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
       REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
-      CORS_ORIGIN: https://app.seu-dominio.com
+      CORS_ORIGIN: http://3.82.206.209
       JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
       WORKER_SECRET: Vp2wRHvJexUtwIXXbJUd5Je2yFmhKwx1uyuYH9yKqZhEwQqWRakgjhGyDnQ7FscT
       SEED_API_KEY: zyn_seed_local_dev_2026
@@ -72,7 +72,7 @@ services:
       REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
       DATABASE_URL: postgresql://zyntra:KFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
       REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
-      CORS_ORIGIN: https://app.seu-dominio.com
+      CORS_ORIGIN: http://3.82.206.209
       JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
       WORKER_SECRET: Vp2wRHvJexUtwIXXbJUd5Je2yFmhKwx1uyuYH9yKqZhEwQqWRakgjhGyDnQ7FscT
       SEED_API_KEY: zyn_seed_local_dev_2026
@@ -92,7 +92,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile.prod
       args:
-        VITE_API_BASE_URL: http://backend:3000
+        VITE_API_BASE_URL: /api
     restart: unless-stopped
     depends_on:
       backend:
