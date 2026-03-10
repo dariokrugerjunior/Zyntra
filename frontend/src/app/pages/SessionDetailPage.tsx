@@ -682,14 +682,38 @@ export const SessionDetailPage: React.FC = () => {
                     Quando ativo, toda mensagem recebida na sessao gera resposta automatica.
                   </p>
                 </div>
-                <label className="inline-flex items-center gap-2 text-sm text-gray-200">
-                  <input
-                    type="checkbox"
-                    checked={autoReplyConfig.enabled}
-                    onChange={(e) => setAutoReplyConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoReplyConfig.enabled}
+                  onClick={() => setAutoReplyConfig((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                  className={`inline-flex items-center gap-3 rounded-full border px-4 py-2 text-base font-semibold shadow-sm transition ${
+                    autoReplyConfig.enabled
+                      ? "border-emerald-400 bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
+                      : "border-rose-400 bg-rose-500/20 text-rose-200 hover:bg-rose-500/30"
+                  }`}
+                >
+                  <span
+                    className={`h-3 w-3 rounded-full transition ${
+                      autoReplyConfig.enabled
+                        ? "bg-emerald-300 shadow-[0_0_0_6px_rgba(52,211,153,0.2)]"
+                        : "bg-rose-300 shadow-[0_0_0_6px_rgba(251,113,133,0.2)]"
+                    }`}
                   />
-                  Ativo
-                </label>
+                  IA {autoReplyConfig.enabled ? "Ativa" : "Inativa"}
+                </button>
+              </div>
+
+              <div
+                className={`rounded-lg border px-4 py-3 text-sm ${
+                  autoReplyConfig.enabled
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                    : "border-rose-500/40 bg-rose-500/10 text-rose-200"
+                }`}
+              >
+                {autoReplyConfig.enabled
+                  ? "Auto-resposta ligada: mensagens recebidas serao respondidas automaticamente."
+                  : "Auto-resposta desligada: nenhuma resposta automatica sera enviada."}
               </div>
 
               <div>
