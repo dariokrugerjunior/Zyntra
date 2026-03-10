@@ -36,9 +36,9 @@ services:
       PORT: "3000"
       POSTGRES_DB: zyntra
       POSTGRES_USER: zyntra
-      POSTGRES_PASSWORD: D2DKFQtrxWAzsQbh8fT0yxa
+      POSTGRES_PASSWORD: KFQtrxWAzsQbh8fT0yxa
       REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
-      DATABASE_URL: postgresql://zyntra:D2DKFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
+      DATABASE_URL: postgresql://zyntra:KFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
       REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
       CORS_ORIGIN: https://app.seu-dominio.com
       JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
@@ -68,9 +68,9 @@ services:
       PORT: "3000"
       POSTGRES_DB: zyntra
       POSTGRES_USER: zyntra
-      POSTGRES_PASSWORD: D2DKFQtrxWAzsQbh8fT0yxa
+      POSTGRES_PASSWORD: KFQtrxWAzsQbh8fT0yxa
       REDIS_PASSWORD: D2DNVEsGJpqUd0BBjZZ3
-      DATABASE_URL: postgresql://zyntra:D2DKFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
+      DATABASE_URL: postgresql://zyntra:KFQtrxWAzsQbh8fT0yxa@postgres:5432/zyntra?schema=public
       REDIS_URL: redis://:D2DNVEsGJpqUd0BBjZZ3@redis:6379
       CORS_ORIGIN: https://app.seu-dominio.com
       JWT_SECRET: mI-y3lMMHVMVI0VOpoVx8PQkPhUYFHIAFeoNMkjT8fy1cZiuADo6_ogmRq4woJ7P
