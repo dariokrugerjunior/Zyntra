@@ -153,6 +153,10 @@ export const Layout: React.FC = () => {
         <main className="p-6">
           <Outlet />
         </main>
+
+        <footer className="px-6 pb-6 text-xs text-gray-400">
+          Desenvolvido por Dario Kruger Junior
+        </footer>
       </div>
     </div>
   );
