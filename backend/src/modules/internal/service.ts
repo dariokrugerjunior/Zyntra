@@ -39,7 +39,7 @@ async function generateOpenAIReply(input: {
   apiToken: string;
   model: string;
   instructions: string;
-  incomingText: string;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
 }) {
   const client = new OpenAI({
     apiKey: input.apiToken
@@ -48,12 +48,7 @@ async function generateOpenAIReply(input: {
   const response = await client.responses.create({
     model: input.model,
     instructions: input.instructions,
-    input: [
-      {
-        role: "user",
-        content: input.incomingText
-      }
-    ]
+    input: input.messages
   });
 
   const reply = String(response.output_text ?? "").trim();
@@ -61,6 +56,17 @@ async function generateOpenAIReply(input: {
     throw new Error("empty_response_from_model");
   }
   return reply;
+}
+
+function extractMessageText(payload: Prisma.JsonValue): string {
+  const data = (payload && typeof payload === "object") ? (payload as Record<string, unknown>) : {};
+  const text = String(data.text ?? "").trim();
+  if (text) return text;
+  const caption = String(data.caption ?? "").trim();
+  if (caption) return caption;
+  const body = String(data.body ?? "").trim();
+  if (body) return body;
+  return "";
 }
 
 type AutoReplyRuntimeConfig = {
@@ -136,6 +142,36 @@ export async function ingestWorkerEvent(input: unknown) {
     if (config?.enabled && config.promptText?.trim() && to && to !== "status@broadcast") {
       const promptText = config.promptText.trim();
       const userMessage = incomingText?.trim() || "(sem texto)";
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const recentMessages = await prisma.message.findMany({
+        where: {
+          companyId: event.companyId,
+          sessionId: event.sessionId,
+          createdAt: { gte: oneHourAgo },
+          OR: [
+            { from: to },
+            { to }
+          ]
+        },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+        select: {
+          direction: true,
+          payload: true
+        }
+      });
+
+      const contextMessages: Array<{ role: "user" | "assistant"; content: string }> = recentMessages
+        .reverse()
+        .map<{ role: "user" | "assistant"; content: string }>((message) => ({
+          role: message.direction === "out" ? "assistant" : "user",
+          content: extractMessageText(message.payload)
+        }))
+        .filter((message) => message.content.length > 0);
+
+      const aiInput = contextMessages.length > 0
+        ? contextMessages
+        : [{ role: "user" as const, content: userMessage }];
 
       let generatedText = buildMockAutoReply(promptText);
 
@@ -145,7 +181,7 @@ export async function ingestWorkerEvent(input: unknown) {
             apiToken: config.apiToken.trim(),
             model: config.aiModel?.trim() || process.env.OPENAI_MODEL || "gpt-5",
             instructions: promptText,
-            incomingText: userMessage
+            messages: aiInput
           });
         } catch (error) {
           logger.error(
