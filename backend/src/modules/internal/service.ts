@@ -283,3 +283,17 @@ export async function ingestWorkerEvent(input: unknown) {
   await enqueueWebhookDeliveries(event.companyId, event.eventType, event.sessionId, envelope);
   logger.info({ eventType: event.eventType, companyId: event.companyId, sessionId: event.sessionId }, "worker event ingested");
 }
+
+export async function listSessionIndexForWorker() {
+  const sessions = await prisma.waSession.findMany({
+    select: {
+      companyId: true,
+      id: true
+    }
+  });
+
+  return sessions.map((session) => ({
+    companyId: session.companyId,
+    sessionId: session.id
+  }));
+}

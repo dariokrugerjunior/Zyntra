@@ -1,3 +1,4 @@
+import { SessionStatus } from "@prisma/client";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import axios from "axios";
@@ -67,6 +68,9 @@ type OpenAIModel = {
 type OpenAIModelsResponse = {
   data: OpenAIModel[];
 };
+
+const INACTIVE_SESSION_STATUSES: SessionStatus[] = ["created", "starting", "qr", "disconnected", "stopped", "error"];
+const INACTIVE_SESSION_TTL_SECONDS = 24 * 60 * 60;
 
 async function validateOpenAIConfig(apiToken: string, aiModel: string) {
   try {
@@ -299,5 +303,42 @@ export async function upsertSessionAutoReplyConfig(companyId: string, sessionId:
     aiModel: config?.aiModel ?? "gpt-5",
     apiToken: config?.apiToken ?? null,
     updatedAt: config?.updatedAt ?? null
+  };
+}
+
+export async function purgeInactiveSessionsOlderThanOneDay() {
+  const cutoff = new Date(Date.now() - INACTIVE_SESSION_TTL_SECONDS * 1000);
+
+  const staleSessions = await prisma.waSession.findMany({
+    where: {
+      status: { in: INACTIVE_SESSION_STATUSES },
+      OR: [
+        { lastSeenAt: { lte: cutoff } },
+        { lastSeenAt: null, updatedAt: { lte: cutoff } }
+      ]
+    },
+    select: {
+      id: true,
+      companyId: true
+    }
+  });
+
+  let enqueued = 0;
+  for (const session of staleSessions) {
+    const lockKey = `lock:session:${session.companyId}:${session.id}:inactive-purge`;
+    const lock = await redis.set(lockKey, "1", "EX", INACTIVE_SESSION_TTL_SECONDS, "NX");
+    if (!lock) continue;
+
+    await sessionPurgeQueue.add(
+      `purge-inactive-${session.companyId}-${session.id}-${Date.now()}`,
+      { companyId: session.companyId, sessionId: session.id },
+      { removeOnComplete: true, removeOnFail: false }
+    );
+    enqueued += 1;
+  }
+
+  return {
+    scanned: staleSessions.length,
+    enqueued
   };
 }

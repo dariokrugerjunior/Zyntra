@@ -6,6 +6,9 @@ import { stopSessionJob } from "./jobs/stopSession.job";
 import { sendTextJob } from "./jobs/sendText.job";
 import { sendMediaJob } from "./jobs/sendMedia.job";
 import { purgeSessionJob } from "./jobs/purgeSession.job";
+import { cleanupOrphanSessionStorage } from "./infra/storage/orphan-cleanup";
+
+const ORPHAN_STORAGE_CLEANUP_EVERY_MS = 60 * 60 * 1000;
 
 process.on("unhandledRejection", (reason) => {
   logger.error({ err: reason }, "unhandled promise rejection");
@@ -54,6 +57,17 @@ async function main() {
       logger.error({ queue: w.name, jobId: job?.id, err: err.message }, "job failed");
     });
   }
+
+  const runOrphanStorageCleanup = async () => {
+    try {
+      await cleanupOrphanSessionStorage();
+    } catch (error) {
+      logger.error({ err: error }, "orphan session storage cleanup failed");
+    }
+  };
+
+  await runOrphanStorageCleanup();
+  setInterval(runOrphanStorageCleanup, ORPHAN_STORAGE_CLEANUP_EVERY_MS);
 
   logger.info("worker ready");
 }
