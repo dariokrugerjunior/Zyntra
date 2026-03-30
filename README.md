@@ -1,5 +1,13 @@
 # Zyntra
 
+[![Private Project](https://img.shields.io/badge/status-private-red)](./README.md)
+[![Node.js 20+](https://img.shields.io/badge/node-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/typescript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![React 18](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Docker Compose](https://img.shields.io/badge/docker-compose-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Redis](https://img.shields.io/badge/redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io/)
+
 Plataforma para operacao de WhatsApp com foco em automacao. O projeto conecta sessoes WhatsApp, sincroniza historico, envia mensagens, recebe eventos em tempo real e permite configurar respostas automaticas com IA por sessao.
 
 O ponto central do Zyntra e simples: transformar um numero de WhatsApp em um bot automatico com IA, com painel web, controle operacional e integracao via API/webhooks.
@@ -189,6 +197,8 @@ Para a interface web, configure tambem em `frontend/.env.local`:
 VITE_API_BASE_URL=http://localhost:3000
 ```
 
+O `frontend` possui `package.json` proprio e nao faz parte do `workspaces` da raiz.
+
 ## Como rodar localmente
 
 ### 1. Instale dependencias
@@ -199,7 +209,7 @@ Na raiz:
 npm install
 ```
 
-No frontend:
+No frontend, separadamente do workspace raiz:
 
 ```bash
 cd frontend
